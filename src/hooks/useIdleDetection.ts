@@ -32,6 +32,7 @@ export function useIdleDetection(
       } else if (idleSecs >= threshold && isIdleRef.current) {
         peakIdleSecsRef.current = idleSecs;
       } else if (idleSecs < threshold && isIdleRef.current) {
+        invoke('bring_to_front').catch(() => {});
         onIdleEndRef.current({
           idleSeconds: peakIdleSecsRef.current,
           idleStartedAt: new Date(idleStartRef.current ?? Date.now()),
@@ -52,7 +53,7 @@ export function useIdleDetection(
       return;
     }
     check();
-    const id = setInterval(check, 15_000);
+    const id = setInterval(check, 5_000);
     return () => clearInterval(id);
   }, [enabled, timerRunning, check]);
 

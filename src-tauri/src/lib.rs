@@ -115,6 +115,23 @@ fn get_idle_seconds() -> u64 {
 }
 
 #[tauri::command]
+fn bring_to_front(app: tauri::AppHandle) {
+    use tauri::Manager;
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+    #[cfg(target_os = "macos")]
+    unsafe {
+        use objc::{class, msg_send, sel, sel_impl};
+        use objc::runtime::YES;
+        let ns_app: *mut objc::runtime::Object = msg_send![class!(NSApplication), sharedApplication];
+        let _: () = msg_send![ns_app, activateIgnoringOtherApps: YES];
+    }
+}
+
+#[tauri::command]
 async fn get_work_package_form(url: String, api_key: String, id: i64, lock_version: i64) -> Result<Value, String> {
     let body = serde_json::json!({ "lockVersion": lock_version, "_links": {} });
     api_post(&url, &api_key, &format!("/api/v3/work_packages/{}/form", id), body).await
@@ -195,6 +212,7 @@ pub fn run() {
             get_time_entries,
             get_work_package_form,
             get_idle_seconds,
+            bring_to_front,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
