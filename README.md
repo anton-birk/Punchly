@@ -13,14 +13,22 @@ A macOS time tracker for [OpenProject](https://www.openproject.org/). Sits in yo
 
 ## Requirements
 
-- macOS 12+
+- macOS 12+, Windows 10+, or Linux (Ubuntu 22.04+)
 - OpenProject instance with API access (API key)
 
 ## Installation
 
-Download the latest `.dmg` from [Releases](../../releases), open it, drag **Punchly** to Applications.
+Download the latest release for your platform from [Releases](../../releases):
 
-> **First launch on a new Mac:** if macOS blocks the app, go to **System Settings → Privacy & Security** and click **Open Anyway**.
+| Platform | File |
+|---|---|
+| macOS (Intel + Apple Silicon) | `.dmg` |
+| Windows | `.exe` (NSIS installer) or `.msi` |
+| Linux | `.AppImage` (universal) or `.deb` |
+
+> **macOS — first launch on a new Mac:** if Gatekeeper blocks the app, go to **System Settings → Privacy & Security → Open Anyway**.
+>
+> **Linux AppImage:** `chmod +x Punchly_*.AppImage && ./Punchly_*.AppImage`
 
 ## Setup
 
@@ -46,10 +54,15 @@ bun run tauri build
 # Output: src-tauri/target/release/bundle/dmg/
 ```
 
-**Universal binary (Intel + Apple Silicon):**
+**macOS universal binary (Intel + Apple Silicon):**
 ```sh
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 bun run tauri build --target universal-apple-darwin
+```
+
+**Windows / Linux** (run natively on the target OS):
+```sh
+bun run tauri build
 ```
 
 ## Releasing
@@ -73,7 +86,11 @@ Without signing, macOS Gatekeeper will warn users on first launch. To distribute
 | `APPLE_PASSWORD` | App-specific password — create at [appleid.apple.com](https://appleid.apple.com) |
 | `APPLE_TEAM_ID` | 10-character team ID from [developer.apple.com/account](https://developer.apple.com/account) |
 
-Signing requires a paid **Apple Developer Program** membership ($99/year).
+macOS signing requires a paid **Apple Developer Program** membership ($99/year).
+
+**Windows signing** — add `WINDOWS_CERTIFICATE` (base64 `.pfx`) and `WINDOWS_CERTIFICATE_PASSWORD` to GitHub Secrets. Without it the installer is unsigned but functional.
+
+**Linux** — no signing needed.
 
 ## Tech stack
 
