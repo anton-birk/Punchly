@@ -42,7 +42,7 @@ Download the latest release for your platform from [Releases](../../releases):
 **Prerequisites:** Rust (stable), Bun, Xcode Command Line Tools
 
 ```sh
-git clone https://github.com/YOUR_USERNAME/punchly.git
+git clone https://github.com/anton-birk/punchly.git
 cd punchly
 bun install
 bun run tauri dev
