@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use reqwest::Client;
 use serde_json::Value;
 use user_idle::UserIdle;
@@ -108,7 +109,6 @@ async fn create_work_package(url: String, api_key: String, data: Value) -> Resul
     api_post(&url, &api_key, "/api/v3/work_packages", data).await
 }
 
-/// Returns seconds since the last system-wide user input (mouse/keyboard).
 #[tauri::command]
 fn get_idle_seconds() -> u64 {
     UserIdle::get_time().map(|t| t.as_seconds()).unwrap_or(0)
@@ -129,6 +129,73 @@ fn bring_to_front(app: tauri::AppHandle) {
         let ns_app: *mut objc::runtime::Object = msg_send![class!(NSApplication), sharedApplication];
         let _: () = msg_send![ns_app, activateIgnoringOtherApps: YES];
     }
+}
+
+#[tauri::command]
+async fn get_project_wp_form(url: String, api_key: String, project_id: i64) -> Result<Value, String> {
+    let body = serde_json::json!({});
+    api_post(&url, &api_key, &format!("/api/v3/projects/{}/work_packages/form", project_id), body).await
+}
+
+#[tauri::command]
+async fn get_project_members(url: String, api_key: String, project_id: i64) -> Result<Value, String> {
+    api_get(&url, &api_key, &format!("/api/v3/projects/{}/members", project_id), vec![("pageSize", "200".to_string())]).await
+}
+
+#[tauri::command]
+async fn get_project_assignees(url: String, api_key: String, project_id: i64) -> Result<Value, String> {
+    let assignees_url = format!("/api/v3/projects/{}/available_assignees", project_id);
+    match api_get(&url, &api_key, &assignees_url, vec![("pageSize", "200".to_string())]).await {
+        Ok(v) => Ok(v),
+        Err(_) => api_get(&url, &api_key, "/api/v3/principals", vec![("pageSize", "200".to_string())]).await,
+    }
+}
+
+#[tauri::command]
+async fn get_project_versions(url: String, api_key: String, project_id: i64) -> Result<Value, String> {
+    api_get(&url, &api_key, &format!("/api/v3/projects/{}/versions", project_id), vec![]).await
+}
+
+#[tauri::command]
+async fn upload_attachment(
+    url: String,
+    api_key: String,
+    work_package_id: i64,
+    file_name: String,
+    mime_type: String,
+    data_base64: String,
+) -> Result<(), String> {
+    let bytes = B64.decode(&data_base64).map_err(|e| e.to_string())?;
+    let client = make_client()?;
+    let full_url = format!("{}/api/v3/work_packages/{}/attachments", normalize_url(&url), work_package_id);
+    let metadata = serde_json::json!({
+        "fileName": file_name,
+        "fileSize": bytes.len(),
+        "contentType": mime_type,
+    });
+    let metadata_part = reqwest::multipart::Part::text(metadata.to_string())
+        .mime_str("application/json")
+        .map_err(|e| e.to_string())?;
+    let file_part = reqwest::multipart::Part::bytes(bytes)
+        .file_name(file_name)
+        .mime_str(&mime_type)
+        .map_err(|e| e.to_string())?;
+    let form = reqwest::multipart::Form::new()
+        .part("metadata", metadata_part)
+        .part("file", file_part);
+    let resp = client
+        .post(&full_url)
+        .basic_auth("apikey", Some(&api_key))
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("HTTP {}: {}", status, body));
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -168,9 +235,6 @@ async fn get_time_entries(url: String, api_key: String, work_package_id: i64) ->
         r#"[{{"workPackage":{{"operator":"=","values":["{}"]}}}}]"#,
         work_package_id
     );
-    // Try with workPackage filter; some OpenProject versions don't expose it.
-    // On failure, fall back to fetching recent entries without filter — the
-    // frontend then filters client-side by work_package_id from the href.
     match api_get(
         &url,
         &api_key,
@@ -213,6 +277,11 @@ pub fn run() {
             get_work_package_form,
             get_idle_seconds,
             bring_to_front,
+            get_project_wp_form,
+            get_project_members,
+            get_project_assignees,
+            get_project_versions,
+            upload_attachment,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

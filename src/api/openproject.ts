@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { Settings, WorkPackage, User, Status, Project, WorkPackageType, Priority, TimeEntry } from '../types/openproject';
+import type { Settings, WorkPackage, User, Status, Project, WorkPackageType, Priority, TimeEntry, Assignee, Version } from '../types/openproject';
 
 interface ApiCollection<T> {
   _embedded: { elements: T[] };
@@ -54,6 +54,8 @@ export async function createWorkPackage(
   statusHref?: string,
   priorityHref?: string,
   description?: string,
+  assigneeHref?: string,
+  versionHref?: string,
 ): Promise<WorkPackage> {
   const links: Record<string, { href: string }> = {
     project: { href: projectHref },
@@ -61,11 +63,98 @@ export async function createWorkPackage(
   };
   if (statusHref) links['status'] = { href: statusHref };
   if (priorityHref) links['priority'] = { href: priorityHref };
+  if (assigneeHref) links['assignee'] = { href: assigneeHref };
+  if (versionHref) links['version'] = { href: versionHref };
 
   const data: Record<string, unknown> = { subject, _links: links };
   if (description) data['description'] = { raw: description };
 
   return await invoke('create_work_package', { url: settings.url, apiKey: settings.apiKey, data });
+}
+
+async function getMembersAsAssignees(settings: Settings, projectId: number): Promise<Assignee[]> {
+  const parseElements = (res: any): Assignee[] =>
+    (res?._embedded?.elements ?? [])
+      .filter((el: any) => el?._type === 'User' || el?._type === 'PlaceholderUser' || el?.id)
+      .map((el: any) => ({ id: el.id as number, name: el.name as string }))
+      .filter((a: Assignee) => a.id && a.name);
+
+  try {
+    const res: any = await invoke('get_project_assignees', { url: settings.url, apiKey: settings.apiKey, projectId });
+    const assignees = parseElements(res);
+    if (assignees.length) return assignees;
+  } catch {}
+
+  try {
+    const res: any = await invoke('get_project_members', { url: settings.url, apiKey: settings.apiKey, projectId });
+    return (res?._embedded?.elements ?? [])
+      .map((el: any) => {
+        const p = el?._links?.principal;
+        if (!p?.href) return null;
+        const id = parseInt(p.href.split('/').pop() ?? '0', 10);
+        return id ? { id, name: p.title ?? String(id) } : null;
+      })
+      .filter(Boolean) as Assignee[];
+  } catch {
+    return [];
+  }
+}
+
+export async function getProjectWpForm(settings: Settings, projectId: number): Promise<{ statuses: Status[]; assignees: Assignee[] }> {
+  // Try the form endpoint first (requires add_work_packages permission)
+  try {
+    const form: any = await invoke('get_project_wp_form', { url: settings.url, apiKey: settings.apiKey, projectId });
+    const schema = form?._embedded?.schema;
+
+    const statuses: Status[] =
+      schema?.status?._embedded?.allowedValues ??
+      (schema?.status?._links?.allowedValues ?? []).map((l: any) => ({
+        id: parseInt(l.href.split('/').pop(), 10),
+        name: l.title ?? l.href,
+        isClosed: false,
+        isDefault: false,
+      }));
+
+    const assigneeEmbedded: Assignee[] = schema?.assignee?._embedded?.allowedValues ?? [];
+    const assigneeLinks: { href: string; title: string }[] = schema?.assignee?._links?.allowedValues ?? [];
+    let assignees: Assignee[] = assigneeEmbedded.length
+      ? assigneeEmbedded
+      : assigneeLinks.map((l) => ({ id: parseInt(l.href.split('/').pop() ?? '0', 10), name: l.title }));
+
+    if (!assignees.length) assignees = await getMembersAsAssignees(settings, projectId);
+
+    return { statuses, assignees };
+  } catch {
+    const assignees = await getMembersAsAssignees(settings, projectId);
+    return { statuses: [], assignees };
+  }
+}
+
+export async function getProjectVersions(settings: Settings, projectId: number): Promise<Version[]> {
+  try {
+    const res: any = await invoke('get_project_versions', { url: settings.url, apiKey: settings.apiKey, projectId });
+    return (res?._embedded?.elements ?? []).filter((v: Version) => v.status === 'open');
+  } catch {
+    return [];
+  }
+}
+
+export async function uploadAttachment(settings: Settings, workPackageId: number, file: File): Promise<void> {
+  const buffer = await file.arrayBuffer();
+  const uint8 = new Uint8Array(buffer);
+  const chunks: string[] = [];
+  for (let i = 0; i < uint8.length; i += 8192) {
+    chunks.push(String.fromCharCode(...uint8.subarray(i, i + 8192)));
+  }
+  const dataBase64 = btoa(chunks.join(''));
+  await invoke('upload_attachment', {
+    url: settings.url,
+    apiKey: settings.apiKey,
+    workPackageId,
+    fileName: file.name,
+    mimeType: file.type || 'application/octet-stream',
+    dataBase64,
+  });
 }
 
 export async function logTime(

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { getProjects, getTypes, getStatuses, getPriorities, createWorkPackage } from '../api/openproject';
-import type { Settings, Project, WorkPackageType, Status, Priority } from '../types/openproject';
+import { useState, useEffect, useRef } from 'react';
+import { getProjects, getTypes, getPriorities, createWorkPackage, getProjectWpForm, getProjectVersions, uploadAttachment } from '../api/openproject';
+import type { Settings, Project, WorkPackageType, Priority, Assignee, Version } from '../types/openproject';
 
 interface Props {
   settings: Settings;
@@ -8,38 +8,68 @@ interface Props {
   onCreated: () => void;
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [projects, setProjects] = useState<Project[]>([]);
   const [types, setTypes] = useState<WorkPackageType[]>([]);
-  const [statuses, setStatuses] = useState<Status[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
+  const [assignees, setAssignees] = useState<Assignee[]>([]);
+  const [versions, setVersions] = useState<Version[]>([]);
   const [projectId, setProjectId] = useState('');
   const [typeId, setTypeId] = useState('');
-  const [statusId, setStatusId] = useState('');
   const [priorityId, setPriorityId] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [versionId, setVersionId] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    Promise.all([getProjects(settings), getTypes(settings), getStatuses(settings), getPriorities(settings)])
-      .then(([p, t, s, pr]) => {
+    Promise.all([getProjects(settings), getTypes(settings), getPriorities(settings)])
+      .then(([p, t, pr]) => {
         const projs = p._embedded.elements.filter((x) => x.active);
         setProjects(projs);
         setTypes(t._embedded.elements);
-        setStatuses(s._embedded.elements);
         setPriorities(pr._embedded.elements);
         if (projs.length) setProjectId(String(projs[0].id));
         const defType = t._embedded.elements.find((x) => x.isDefault) ?? t._embedded.elements[0];
         if (defType) setTypeId(String(defType.id));
-        const defStatus = s._embedded.elements.find((x) => x.isDefault) ?? s._embedded.elements[0];
-        if (defStatus) setStatusId(String(defStatus.id));
         const defPriority = pr._embedded.elements.find((x) => x.isDefault) ?? pr._embedded.elements[0];
         if (defPriority) setPriorityId(String(defPriority.id));
       })
       .catch((e) => setError(String(e)));
   }, []);
+
+  useEffect(() => {
+    if (!projectId) return;
+    const id = Number(projectId);
+    getProjectWpForm(settings, id).then(({ assignees: a }) => {
+      setAssignees(a);
+      setAssigneeId('');
+    });
+    getProjectVersions(settings, id).then((v) => {
+      setVersions(v);
+      setVersionId('');
+    });
+  }, [projectId]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+    e.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,15 +77,20 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
     setSaving(true);
     setError('');
     try {
-      await createWorkPackage(
+      const wp = await createWorkPackage(
         settings,
         subject.trim(),
         `/api/v3/projects/${projectId}`,
         `/api/v3/types/${typeId}`,
-        statusId ? `/api/v3/statuses/${statusId}` : undefined,
+        undefined,
         priorityId ? `/api/v3/priorities/${priorityId}` : undefined,
         description.trim() || undefined,
+        assigneeId ? `/api/v3/users/${assigneeId}` : undefined,
+        versionId ? `/api/v3/versions/${versionId}` : undefined,
       );
+      for (const file of files) {
+        await uploadAttachment(settings, wp.id, file);
+      }
       onCreated();
       onClose();
     } catch (e) {
@@ -73,16 +108,14 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-[500px] max-w-[90vw] max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-[560px] max-w-[90vw] max-h-[90vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
           <h3 className="text-sm font-bold">New Task</h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-lg px-1 cursor-pointer">✕</button>
         </div>
 
-        {/* Body */}
         <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto">
           <div className="p-5 flex flex-col gap-4">
             <div>
@@ -105,17 +138,26 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
               </div>
             </div>
 
+            <div>
+              <label className={labelCls}>Priority</label>
+              <select className={inputCls} value={priorityId} onChange={(e) => setPriorityId(e.target.value)}>
+                {priorities.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Status</label>
-                <select className={inputCls} value={statusId} onChange={(e) => setStatusId(e.target.value)}>
-                  {statuses.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                <label className={labelCls}>Assignee</label>
+                <select className={inputCls} value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
+                  <option value="">— Unassigned —</option>
+                  {assignees.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Priority</label>
-                <select className={inputCls} value={priorityId} onChange={(e) => setPriorityId(e.target.value)}>
-                  {priorities.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                <label className={labelCls}>Version</label>
+                <select className={inputCls} value={versionId} onChange={(e) => setVersionId(e.target.value)}>
+                  <option value="">— None —</option>
+                  {versions.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                 </select>
               </div>
             </div>
@@ -125,18 +167,43 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
               <textarea className={inputCls + ' resize-none'} placeholder="Optional" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
             </div>
 
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelCls + ' mb-0'}>Attachments</label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs text-indigo-500 hover:text-indigo-600 font-medium cursor-pointer"
+                >
+                  + Add file
+                </button>
+              </div>
+              <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileChange} />
+              {files.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  {files.map((file, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-md px-3 py-2 text-sm">
+                      <span className="text-zinc-400 text-base">{file.type.startsWith('image/') ? '🖼' : '📎'}</span>
+                      <span className="flex-1 truncate text-zinc-800 dark:text-zinc-200">{file.name}</span>
+                      <span className="text-zinc-400 text-xs shrink-0">{formatBytes(file.size)}</span>
+                      <button type="button" onClick={() => removeFile(i)} className="text-zinc-400 hover:text-red-400 cursor-pointer ml-1 text-base leading-none">✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {error && (
               <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md p-3 break-all">{error}</div>
             )}
           </div>
 
-          {/* Footer */}
           <div className="flex justify-end gap-2.5 px-5 py-4 border-t border-zinc-200 dark:border-zinc-800">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
               Cancel
             </button>
             <button type="submit" disabled={!subject.trim() || !projectId || !typeId || saving} className="px-4 py-2 text-sm font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer">
-              {saving ? 'Creating…' : 'Create Task'}
+              {saving ? (files.length ? 'Uploading…' : 'Creating…') : 'Create Task'}
             </button>
           </div>
         </form>

@@ -73,6 +73,17 @@ export interface Priority {
   isDefault: boolean;
 }
 
+export interface Assignee {
+  id: number;
+  name: string;
+}
+
+export interface Version {
+  id: number;
+  name: string;
+  status: string;
+}
+
 export interface Settings {
   url: string;
   apiKey: string;
