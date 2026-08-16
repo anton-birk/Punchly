@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { Settings, WorkPackage, User, Status, Project, WorkPackageType, Priority } from '../types/openproject';
+import type { Settings, WorkPackage, User, Status, Project, WorkPackageType, Priority, TimeEntry } from '../types/openproject';
 
 interface ApiCollection<T> {
   _embedded: { elements: T[] };
@@ -124,6 +124,26 @@ export function formatDuration(seconds: number): string {
   return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':');
 }
 
+export async function getTimeEntries(settings: Settings, workPackageId: number): Promise<ApiCollection<TimeEntry>> {
+  return await invoke('get_time_entries', { url: settings.url, apiKey: settings.apiKey, workPackageId });
+}
+
 export function idFromHref(href: string): number {
   return parseInt(href.split('/').pop() ?? '0', 10);
+}
+
+/** Парсит ISO 8601 duration "PT2H30M" → { hours: 2.5, display: "2h 30m" } */
+export function parseISODuration(iso: string | undefined): { hours: number; display: string } {
+  if (!iso || iso === 'PT0S' || iso === 'P0D') return { hours: 0, display: '—' };
+  const m = iso.match(/PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!m) return { hours: 0, display: '—' };
+  const h = parseFloat(m[1] ?? '0');
+  const min = parseInt(m[2] ?? '0');
+  const total = h + min / 60;
+  const dH = Math.floor(total);
+  const dM = Math.round((total - dH) * 60);
+  const parts: string[] = [];
+  if (dH) parts.push(`${dH}h`);
+  if (dM) parts.push(`${dM}m`);
+  return { hours: total, display: parts.length ? parts.join(' ') : '—' };
 }

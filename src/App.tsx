@@ -87,6 +87,7 @@ function App() {
               currentUserId={currentUser?.id ?? null}
               runningWpId={timer?.workPackageId ?? null}
               onStartTimer={handleStartTimer}
+              onStopTimer={handleStopTimer}
             />
           )}
 
@@ -97,6 +98,7 @@ function App() {
               currentUserId={currentUser?.id ?? null}
               runningWpId={timer?.workPackageId ?? null}
               onStartTimer={handleStartTimer}
+              onStopTimer={handleStopTimer}
             />
           )}
 

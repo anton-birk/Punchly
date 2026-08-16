@@ -18,10 +18,24 @@ export interface WorkPackage {
   subject: string;
   description?: { raw: string; html: string };
   percentageDone: number;
+  spentTime?: string;        // ISO 8601 duration, e.g. "PT2H30M"
+  derivedSpentTime?: string; // includes child tasks
   lockVersion: number;
   createdAt: string;
   updatedAt: string;
   _links: HalLinks;
+}
+
+export interface TimeEntry {
+  id: number;
+  hours: string;   // ISO 8601 duration
+  spentOn: string; // YYYY-MM-DD
+  comment?: { raw: string };
+  _links: {
+    user: HalLink;
+    workPackage: HalLink;
+    project: HalLink;
+  };
 }
 
 export interface User {

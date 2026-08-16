@@ -132,6 +132,38 @@ async fn get_priorities(url: String, api_key: String) -> Result<Value, String> {
     api_get(&url, &api_key, "/api/v3/priorities", vec![]).await
 }
 
+#[tauri::command]
+async fn get_time_entries(url: String, api_key: String, work_package_id: i64) -> Result<Value, String> {
+    let filters = format!(
+        r#"[{{"workPackage":{{"operator":"=","values":["{}"]}}}}]"#,
+        work_package_id
+    );
+    // Try with workPackage filter; some OpenProject versions don't expose it.
+    // On failure, fall back to fetching recent entries without filter — the
+    // frontend then filters client-side by work_package_id from the href.
+    match api_get(
+        &url,
+        &api_key,
+        "/api/v3/time_entries",
+        vec![
+            ("filters", filters),
+            ("pageSize", "100".to_string()),
+            ("sortBy", r#"[["spentOn","desc"]]"#.to_string()),
+        ],
+    ).await {
+        Ok(result) => Ok(result),
+        Err(_) => api_get(
+            &url,
+            &api_key,
+            "/api/v3/time_entries",
+            vec![
+                ("pageSize", "200".to_string()),
+                ("sortBy", r#"[["spentOn","desc"]]"#.to_string()),
+            ],
+        ).await,
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -147,6 +179,7 @@ pub fn run() {
             get_projects,
             get_types,
             get_priorities,
+            get_time_entries,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
