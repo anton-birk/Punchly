@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import { useSettings } from './hooks/useSettings';
 import { useTimer } from './hooks/useTimer';
 import { useIdleDetection, type IdleEvent } from './hooks/useIdleDetection';
+import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { Sidebar } from './components/Sidebar';
 import { TasksView } from './components/TasksView';
 import { SettingsView } from './components/SettingsView';
@@ -24,11 +25,25 @@ function App() {
   const [logError, setLogError] = useState('');
   const [theme, setTheme] = useState<Theme>(loadTheme);
   const [pendingIdle, setPendingIdle] = useState<IdleEvent | null>(null);
+  const [tasksRefreshKey, setTasksRefreshKey] = useState(0);
+  const isOnline = useNetworkStatus();
+  const wasOfflineRef = useRef(false);
 
   useEffect(() => {
     if (!isConfigured) return;
     testConnection(settings).then(setCurrentUser).catch(() => setCurrentUser(null));
   }, [settings.url, settings.apiKey]);
+
+  useEffect(() => {
+    if (isOnline && wasOfflineRef.current) {
+      wasOfflineRef.current = false;
+      if (isConfigured) {
+        testConnection(settings).then(setCurrentUser).catch(() => setCurrentUser(null));
+        setTasksRefreshKey((k) => k + 1);
+      }
+    }
+    if (!isOnline) wasOfflineRef.current = true;
+  }, [isOnline]);
 
   useEffect(() => {
     if (!isConfigured) setView('settings');
@@ -91,6 +106,12 @@ function App() {
         />
 
         <main className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
+          {!isOnline && (
+            <div className="flex items-center gap-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-xs px-5 py-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+              No internet connection — timer is still running, changes will sync when back online.
+            </div>
+          )}
           {logError && (
             <div className="flex items-center justify-between gap-3 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs px-5 py-2">
               <span>{logError}</span>
@@ -100,6 +121,7 @@ function App() {
 
           {view === 'my-tasks' && (
             <TasksView
+              key={`my-${tasksRefreshKey}`}
               settings={settings}
               onlyMine={true}
               currentUserId={currentUser?.id ?? null}
@@ -111,6 +133,7 @@ function App() {
 
           {view === 'all-tasks' && (
             <TasksView
+              key={`all-${tasksRefreshKey}`}
               settings={settings}
               onlyMine={false}
               currentUserId={currentUser?.id ?? null}

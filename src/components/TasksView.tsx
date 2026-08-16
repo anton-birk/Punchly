@@ -35,6 +35,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
   const [filterProject, setFilterProject] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedWp, setSelectedWp] = useState<WorkPackage | null>(null);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     Promise.all([getStatuses(settings), getProjects(settings)]).then(([s, p]) => {
@@ -71,8 +72,9 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
         setTasks((prev) => (append ? [...prev, ...elements] : elements));
         setTotal(result.total);
         setOffset(page);
+        setLoadError('');
       } catch (e) {
-        console.error(e);
+        setLoadError(String(e));
       } finally {
         setLoading(false);
       }
@@ -141,10 +143,16 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
 
         {/* List */}
         <div className="flex-1 overflow-y-auto px-6 py-3 flex flex-col gap-1.5">
+          {loadError && (
+            <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2 mt-1">
+              <span className="flex-1">{loadError}</span>
+              <button onClick={() => load(1)} className="underline hover:text-amber-300 cursor-pointer whitespace-nowrap">Retry</button>
+            </div>
+          )}
           {loading && tasks.length === 0 && (
             <div className="flex items-center justify-center py-16 text-sm text-zinc-400">Loading…</div>
           )}
-          {!loading && tasks.length === 0 && (
+          {!loading && tasks.length === 0 && !loadError && (
             <div className="flex items-center justify-center py-16 text-sm text-zinc-400">No tasks found</div>
           )}
 
