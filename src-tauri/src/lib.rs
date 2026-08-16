@@ -108,6 +108,12 @@ async fn create_work_package(url: String, api_key: String, data: Value) -> Resul
 }
 
 #[tauri::command]
+async fn get_work_package_form(url: String, api_key: String, id: i64, lock_version: i64) -> Result<Value, String> {
+    let body = serde_json::json!({ "lockVersion": lock_version, "_links": {} });
+    api_post(&url, &api_key, &format!("/api/v3/work_packages/{}/form", id), body).await
+}
+
+#[tauri::command]
 async fn log_time(url: String, api_key: String, data: Value) -> Result<Value, String> {
     api_post(&url, &api_key, "/api/v3/time_entries", data).await
 }
@@ -180,6 +186,7 @@ pub fn run() {
             get_types,
             get_priorities,
             get_time_entries,
+            get_work_package_form,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

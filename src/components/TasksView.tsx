@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getWorkPackages, getStatuses, getProjects, parseISODuration } from '../api/openproject';
 import type { Settings, WorkPackage, Status, Project } from '../types/openproject';
 import { CreateTaskModal } from './CreateTaskModal';
-import { TaskDetailPanel } from './TaskDetailPanel';
+import { TaskDetailPanel, StatusDot } from './TaskDetailPanel';
 
 interface Props {
   settings: Settings;
@@ -158,6 +158,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
             const statusTitle = wp._links.status?.title ?? '';
             const pKey = priorityTitle.toLowerCase();
             const spent = parseISODuration(wp.spentTime);
+            const statusObj = statuses.find((s) => s.name === statusTitle);
 
             return (
               <div
@@ -200,9 +201,10 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
                     <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${priorityColor[pKey] ?? priorityColor['normal']}`}>
                       {priorityTitle}
                     </span>
-                    {/* Status — plain text */}
-                    <span className="text-[11px] text-zinc-400 dark:text-zinc-500 flex-shrink-0">
-                      {statusTitle}
+                    {/* Status — dot + text */}
+                    <span className="flex items-center gap-1 flex-shrink-0">
+                      <StatusDot color={statusObj?.color} isClosed={statusObj?.isClosed} />
+                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{statusTitle}</span>
                     </span>
                     {wp.percentageDone > 0 && (
                       <span className="text-[11px] text-zinc-400 flex-shrink-0">{wp.percentageDone}%</span>
@@ -235,7 +237,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
         <TaskDetailPanel
           wp={selectedWp}
           settings={settings}
-          statuses={statuses}
+          allStatuses={statuses}
           runningWpId={runningWpId}
           onStartTimer={onStartTimer}
           onStopTimer={onStopTimer}

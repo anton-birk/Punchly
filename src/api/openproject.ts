@@ -128,6 +128,25 @@ export async function getTimeEntries(settings: Settings, workPackageId: number):
   return await invoke('get_time_entries', { url: settings.url, apiKey: settings.apiKey, workPackageId });
 }
 
+/**
+ * Returns allowed status transitions for a work package via the form endpoint.
+ * Respects the current user's role and OpenProject workflow configuration.
+ * Falls back to an empty array if the endpoint is unavailable.
+ */
+export async function getAllowedStatuses(settings: Settings, id: number, lockVersion: number): Promise<Status[]> {
+  try {
+    const form = await invoke<any>('get_work_package_form', {
+      url: settings.url,
+      apiKey: settings.apiKey,
+      id,
+      lockVersion,
+    });
+    return form?._embedded?.schema?.status?._embedded?.allowedValues ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export function idFromHref(href: string): number {
   return parseInt(href.split('/').pop() ?? '0', 10);
 }

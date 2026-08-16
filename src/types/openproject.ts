@@ -50,6 +50,7 @@ export interface Status {
   name: string;
   isClosed: boolean;
   isDefault: boolean;
+  color?: string; // hex, e.g. "#6e9fc5" — returned by some OP versions
 }
 
 export interface Project {
