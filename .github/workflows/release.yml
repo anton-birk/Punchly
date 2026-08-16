@@ -29,6 +29,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          if [ -z "$VERSION" ]; then VERSION=${{ inputs.tag }}; VERSION=${VERSION#v}; fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > /tmp/tauri.conf.json && mv /tmp/tauri.conf.json src-tauri/tauri.conf.json
+          sed -i '' "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
@@ -61,7 +69,19 @@ jobs:
         with:
           tag_name: ${{ github.ref_name != '' && github.ref_name || inputs.tag }}
           draft: true
-          generate_release_notes: true
+          body: |
+            ## Punchly ${{ env.VERSION }}
+
+            Time tracker for OpenProject — macOS, Windows, Linux.
+
+            ### Installation
+            | Platform | File |
+            |---|---|
+            | macOS (Intel + Apple Silicon) | `.dmg` |
+            | Windows | `.exe` or `.msi` |
+            | Linux | `.AppImage` or `.deb` |
+
+            **macOS:** open the `.dmg`, drag to Applications. On first launch go to *System Settings → Privacy & Security → Open Anyway* if Gatekeeper blocks it.
           files: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
 
   # ──────────────────────────────────────────────
@@ -76,6 +96,18 @@ jobs:
       WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set version from tag
+        shell: pwsh
+        run: |
+          $tag = if ($env:GITHUB_REF_NAME -ne '') { $env:GITHUB_REF_NAME } else { '${{ inputs.tag }}' }
+          $version = $tag.TrimStart('v')
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          $conf = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json
+          $conf.version = $version
+          $conf | ConvertTo-Json -Depth 10 | Set-Content src-tauri/tauri.conf.json
+          (Get-Content src-tauri/Cargo.toml) -replace '^version = ".*"', "version = `"$version`"" | Set-Content src-tauri/Cargo.toml
+
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -113,6 +145,14 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          if [ -z "$VERSION" ]; then VERSION=${{ inputs.tag }}; VERSION=${VERSION#v}; fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > /tmp/tauri.conf.json && mv /tmp/tauri.conf.json src-tauri/tauri.conf.json
+          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 
       - name: Install Linux dependencies
         run: |
