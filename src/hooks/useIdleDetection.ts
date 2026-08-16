@@ -15,6 +15,7 @@ export function useIdleDetection(
   const [isIdle, setIsIdle] = useState(false);
   const isIdleRef = useRef(false);
   const idleStartRef = useRef<number | null>(null);
+  const peakIdleSecsRef = useRef<number>(0);
   const onIdleEndRef = useRef(onIdleEnd);
   useEffect(() => { onIdleEndRef.current = onIdleEnd; }, [onIdleEnd]);
 
@@ -25,12 +26,18 @@ export function useIdleDetection(
 
       if (idleSecs >= threshold && !isIdleRef.current) {
         idleStartRef.current = Date.now() - idleSecs * 1000;
+        peakIdleSecsRef.current = idleSecs;
         isIdleRef.current = true;
         setIsIdle(true);
+      } else if (idleSecs >= threshold && isIdleRef.current) {
+        peakIdleSecsRef.current = idleSecs;
       } else if (idleSecs < threshold && isIdleRef.current) {
-        const duration = Math.floor((Date.now() - (idleStartRef.current ?? Date.now())) / 1000);
-        onIdleEndRef.current({ idleSeconds: duration, idleStartedAt: new Date(idleStartRef.current ?? Date.now()) });
+        onIdleEndRef.current({
+          idleSeconds: peakIdleSecsRef.current,
+          idleStartedAt: new Date(idleStartRef.current ?? Date.now()),
+        });
         idleStartRef.current = null;
+        peakIdleSecsRef.current = 0;
         isIdleRef.current = false;
         setIsIdle(false);
       }
