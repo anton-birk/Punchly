@@ -30,7 +30,6 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
         setTypes(t._embedded.elements);
         setStatuses(s._embedded.elements);
         setPriorities(pr._embedded.elements);
-
         if (projs.length) setProjectId(String(projs[0].id));
         const defType = t._embedded.elements.find((x) => x.isDefault) ?? t._embedded.elements[0];
         if (defType) setTypeId(String(defType.id));
@@ -65,80 +64,78 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
     }
   };
 
+  const inputCls = 'w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none focus:border-indigo-500 transition-colors';
+  const labelCls = 'block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1.5';
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>New Task</h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-[500px] max-w-[90vw] max-h-[90vh] flex flex-col shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
+          <h3 className="text-sm font-bold">New Task</h3>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-lg px-1 cursor-pointer">✕</button>
         </div>
 
-        <form className="modal-body" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Subject *</label>
-            <input
-              className="form-input"
-              placeholder="Task title"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              autoFocus
-            />
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto">
+          <div className="p-5 flex flex-col gap-4">
+            <div>
+              <label className={labelCls}>Subject *</label>
+              <input className={inputCls} placeholder="Task title" value={subject} onChange={(e) => setSubject(e.target.value)} autoFocus />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Project *</label>
+                <select className={inputCls} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+                  {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Type *</label>
+                <select className={inputCls} value={typeId} onChange={(e) => setTypeId(e.target.value)}>
+                  {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Status</label>
+                <select className={inputCls} value={statusId} onChange={(e) => setStatusId(e.target.value)}>
+                  {statuses.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Priority</label>
+                <select className={inputCls} value={priorityId} onChange={(e) => setPriorityId(e.target.value)}>
+                  {priorities.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className={labelCls}>Description</label>
+              <textarea className={inputCls + ' resize-none'} placeholder="Optional" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            </div>
+
+            {error && (
+              <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md p-3 break-all">{error}</div>
+            )}
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Project *</label>
-              <select className="form-select" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Type *</label>
-              <select className="form-select" value={typeId} onChange={(e) => setTypeId(e.target.value)}>
-                {types.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Status</label>
-              <select className="form-select" value={statusId} onChange={(e) => setStatusId(e.target.value)}>
-                {statuses.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Priority</label>
-              <select className="form-select" value={priorityId} onChange={(e) => setPriorityId(e.target.value)}>
-                {priorities.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea
-              className="form-textarea"
-              placeholder="Optional description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          {error && <div className="form-error">{error}</div>}
-
-          <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn-primary" disabled={!subject.trim() || !projectId || !typeId || saving}>
+          {/* Footer */}
+          <div className="flex justify-end gap-2.5 px-5 py-4 border-t border-zinc-200 dark:border-zinc-800">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
+              Cancel
+            </button>
+            <button type="submit" disabled={!subject.trim() || !projectId || !typeId || saving} className="px-4 py-2 text-sm font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer">
               {saving ? 'Creating…' : 'Create Task'}
             </button>
           </div>
