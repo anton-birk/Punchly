@@ -45,11 +45,12 @@ jobs:
         run: |
           CERT=$RUNNER_TEMP/cert.p12
           KC=$RUNNER_TEMP/signing.keychain-db
-          echo "$APPLE_CERTIFICATE" | base64 --decode -o $CERT
-          security create-keychain -p "" $KC
+          echo "$APPLE_CERTIFICATE" | base64 --decode > $CERT
+          security create-keychain -p "temp-keychain-password" $KC
           security set-keychain-settings -lut 21600 $KC
-          security unlock-keychain -p "" $KC
+          security unlock-keychain -p "temp-keychain-password" $KC
           security import $CERT -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KC
+          security set-key-partition-list -S apple-tool:,apple: -s -k "temp-keychain-password" $KC
           security list-keychain -d user -s $KC
 
       - name: Build (macOS universal)
