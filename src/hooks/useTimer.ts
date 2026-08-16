@@ -12,28 +12,26 @@ function loadTimer(): ActiveTimer | null {
 }
 
 function saveTimer(t: ActiveTimer | null) {
-  if (t) {
-    localStorage.setItem(KEY, JSON.stringify(t));
-  } else {
-    localStorage.removeItem(KEY);
-  }
+  if (t) localStorage.setItem(KEY, JSON.stringify(t));
+  else localStorage.removeItem(KEY);
 }
 
 export function useTimer() {
   const [timer, setTimer] = useState<ActiveTimer | null>(loadTimer);
   const [elapsed, setElapsed] = useState(() => {
     const t = loadTimer();
-    if (t?.isRunning) return Math.floor((Date.now() - t.startTime) / 1000);
+    if (t?.isRunning) return Math.max(0, Math.floor((Date.now() - t.startTime) / 1000) - (t.idleDeductedSec ?? 0));
     return 0;
   });
 
   useEffect(() => {
     if (!timer?.isRunning) return;
     const interval = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - timer.startTime) / 1000));
+      const raw = Math.floor((Date.now() - timer.startTime) / 1000);
+      setElapsed(Math.max(0, raw - (timer.idleDeductedSec ?? 0)));
     }, 1000);
     return () => clearInterval(interval);
-  }, [timer?.isRunning, timer?.startTime]);
+  }, [timer?.isRunning, timer?.startTime, timer?.idleDeductedSec]);
 
   const start = useCallback(
     (workPackageId: number, workPackageSubject: string, projectHref: string, projectId: number) => {
@@ -45,6 +43,7 @@ export function useTimer() {
         projectHref,
         projectId,
         comment: 'Time tracked via Punchly',
+        idleDeductedSec: 0,
       };
       setTimer(t);
       setElapsed(0);
@@ -53,9 +52,20 @@ export function useTimer() {
     [],
   );
 
+  /** Add idle seconds to be deducted from the final elapsed time. */
+  const deductIdle = useCallback((seconds: number) => {
+    setTimer((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, idleDeductedSec: (prev.idleDeductedSec ?? 0) + seconds };
+      saveTimer(updated);
+      return updated;
+    });
+  }, []);
+
   const stop = useCallback((): { elapsed: number; timer: ActiveTimer } | null => {
     if (!timer) return null;
-    const finalElapsed = Math.floor((Date.now() - timer.startTime) / 1000);
+    const raw = Math.floor((Date.now() - timer.startTime) / 1000);
+    const finalElapsed = Math.max(0, raw - (timer.idleDeductedSec ?? 0));
     const stopped = { ...timer, isRunning: false };
     setTimer(null);
     setElapsed(0);
@@ -63,5 +73,5 @@ export function useTimer() {
     return { elapsed: finalElapsed, timer: stopped };
   }, [timer]);
 
-  return { timer, elapsed, start, stop };
+  return { timer, elapsed, start, stop, deductIdle };
 }

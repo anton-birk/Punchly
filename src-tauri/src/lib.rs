@@ -1,5 +1,6 @@
 use reqwest::Client;
 use serde_json::Value;
+use user_idle::UserIdle;
 
 fn make_client() -> Result<Client, String> {
     Client::builder().build().map_err(|e| e.to_string())
@@ -107,6 +108,12 @@ async fn create_work_package(url: String, api_key: String, data: Value) -> Resul
     api_post(&url, &api_key, "/api/v3/work_packages", data).await
 }
 
+/// Returns seconds since the last system-wide user input (mouse/keyboard).
+#[tauri::command]
+fn get_idle_seconds() -> u64 {
+    UserIdle::get_time().map(|t| t.as_seconds()).unwrap_or(0)
+}
+
 #[tauri::command]
 async fn get_work_package_form(url: String, api_key: String, id: i64, lock_version: i64) -> Result<Value, String> {
     let body = serde_json::json!({ "lockVersion": lock_version, "_links": {} });
@@ -187,6 +194,7 @@ pub fn run() {
             get_priorities,
             get_time_entries,
             get_work_package_form,
+            get_idle_seconds,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -241,5 +241,5 @@ function fmtHours(h: number): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso + 'T00:00:00').toLocaleDateString('en-EN', { day: 'numeric', month: 'short', year: 'numeric' });
 }

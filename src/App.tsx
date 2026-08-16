@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { useSettings } from './hooks/useSettings';
 import { useTimer } from './hooks/useTimer';
+import { useIdleDetection, type IdleEvent } from './hooks/useIdleDetection';
 import { Sidebar } from './components/Sidebar';
 import { TasksView } from './components/TasksView';
 import { SettingsView } from './components/SettingsView';
+import { IdleDialog } from './components/IdleDialog';
 import { testConnection, logTime, idFromHref } from './api/openproject';
 import type { View, WorkPackage, User } from './types/openproject';
 
@@ -16,17 +18,16 @@ function loadTheme(): Theme {
 
 function App() {
   const { settings, save: saveSettings, isConfigured } = useSettings();
-  const { timer, elapsed, start, stop } = useTimer();
+  const { timer, elapsed, start, stop, deductIdle } = useTimer();
   const [view, setView] = useState<View>(isConfigured ? 'my-tasks' : 'settings');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [logError, setLogError] = useState('');
   const [theme, setTheme] = useState<Theme>(loadTheme);
+  const [pendingIdle, setPendingIdle] = useState<IdleEvent | null>(null);
 
   useEffect(() => {
     if (!isConfigured) return;
-    testConnection(settings)
-      .then(setCurrentUser)
-      .catch(() => setCurrentUser(null));
+    testConnection(settings).then(setCurrentUser).catch(() => setCurrentUser(null));
   }, [settings.url, settings.apiKey]);
 
   useEffect(() => {
@@ -41,22 +42,38 @@ function App() {
 
   const handleStartTimer = (wp: WorkPackage) => {
     const projectHref = wp._links.project?.href ?? '';
-    const projectId = idFromHref(projectHref);
-    start(wp.id, wp.subject, projectHref, projectId);
+    start(wp.id, wp.subject, projectHref, idFromHref(projectHref));
   };
 
   const handleStopTimer = async () => {
     const result = stop();
     if (!result) return;
-    const { elapsed: secs, timer: t } = result;
     const today = new Date().toISOString().slice(0, 10);
     try {
-      await logTime(settings, t.workPackageId, t.projectId, secs, t.comment, today);
+      await logTime(settings, result.timer.workPackageId, result.timer.projectId, result.elapsed, result.timer.comment, today);
       setLogError('');
     } catch (e) {
-      setLogError(`Не удалось записать время: ${e}`);
+      setLogError(`Failed to log time: ${e}`);
     }
   };
+
+  const handleIdleEnd = useCallback((e: IdleEvent) => {
+    setPendingIdle(e);
+  }, []);
+
+  const handleIdleKeep = () => setPendingIdle(null);
+
+  const handleIdleDeduct = () => {
+    if (pendingIdle) deductIdle(pendingIdle.idleSeconds);
+    setPendingIdle(null);
+  };
+
+  const { isIdle } = useIdleDetection(
+    settings.idleEnabled,
+    settings.idleThresholdMin,
+    timer?.isRunning ?? false,
+    handleIdleEnd,
+  );
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
@@ -67,6 +84,7 @@ function App() {
           timerRunning={timer?.isRunning ?? false}
           timerElapsed={elapsed}
           timerSubject={timer?.workPackageSubject ?? null}
+          isIdle={isIdle}
           onStopTimer={handleStopTimer}
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -107,6 +125,15 @@ function App() {
           )}
         </main>
       </div>
+
+      {pendingIdle && (
+        <IdleDialog
+          idleSeconds={pendingIdle.idleSeconds}
+          idleStartedAt={pendingIdle.idleStartedAt}
+          onKeep={handleIdleKeep}
+          onDeduct={handleIdleDeduct}
+        />
+      )}
     </div>
   );
 }

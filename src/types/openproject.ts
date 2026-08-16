@@ -76,6 +76,8 @@ export interface Priority {
 export interface Settings {
   url: string;
   apiKey: string;
+  idleEnabled: boolean;
+  idleThresholdMin: number;
 }
 
 export interface ActiveTimer {
@@ -86,6 +88,7 @@ export interface ActiveTimer {
   projectHref: string;
   projectId: number;
   comment: string;
+  idleDeductedSec: number;
 }
 
 export type View = 'my-tasks' | 'all-tasks' | 'settings';

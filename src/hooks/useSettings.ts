@@ -8,7 +8,7 @@ function load(): Settings {
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { url: '', apiKey: '' };
+  return { url: '', apiKey: '', idleEnabled: false, idleThresholdMin: 5 };
 }
 
 export function useSettings() {
