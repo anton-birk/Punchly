@@ -83,6 +83,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
   );
 
   useEffect(() => {
+    if (onlyMine && currentUserId === null) return;
     load(1);
   }, [settings.url, settings.apiKey, onlyMine, currentUserId, filterStatus, filterProject]);
 

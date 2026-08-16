@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { getTimeEntries, getAllowedStatuses, updateWorkPackage, parseISODuration, idFromHref } from '../api/openproject';
 import type { Settings, WorkPackage, TimeEntry, Status } from '../types/openproject';
 
 interface Props {
   wp: WorkPackage;
   settings: Settings;
-  allStatuses: Status[];       // full list for fallback / display
+  allStatuses: Status[];
   runningWpId: number | null;
   onStartTimer: (wp: WorkPackage) => void;
   onStopTimer: () => void;
@@ -90,6 +91,17 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
             {typeTitle}
           </span>
           <span className="text-xs text-zinc-400 tabular flex-shrink-0">#{wp.id}</span>
+          <button
+            onClick={() => openUrl(`${settings.url}/work_packages/${wp.id}`)}
+            title="Open in OpenProject"
+            className="text-zinc-400 hover:text-indigo-500 transition-colors cursor-pointer flex-shrink-0"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </button>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {isTracking ? (
