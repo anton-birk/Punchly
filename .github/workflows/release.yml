@@ -10,47 +10,47 @@ on:
         description: 'Version tag (e.g. v0.2.0)'
         required: true
 
+env:
+  TAG: ${{ github.ref_name != 'main' && github.ref_name || inputs.tag }}
+
 jobs:
-  release-macos:
+  # ──────────────────────────────────────────────
+  # macOS — universal binary (Intel + Apple Silicon)
+  # ──────────────────────────────────────────────
+  build-macos:
     runs-on: macos-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust (stable)
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
 
-      - name: Install JS dependencies
-        run: bun install
-
-      - name: Import Apple Developer certificate
-        if: env.APPLE_CERTIFICATE != ''
+      - name: Import Apple certificate
+        if: ${{ secrets.APPLE_CERTIFICATE != '' }}
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
-          CERT_PATH=$RUNNER_TEMP/cert.p12
-          KC_PATH=$RUNNER_TEMP/signing.keychain-db
-          echo "$APPLE_CERTIFICATE" | base64 --decode -o $CERT_PATH
-          security create-keychain -p "" $KC_PATH
-          security set-keychain-settings -lut 21600 $KC_PATH
-          security unlock-keychain -p "" $KC_PATH
-          security import $CERT_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KC_PATH
-          security list-keychain -d user -s $KC_PATH
+          CERT=$RUNNER_TEMP/cert.p12
+          KC=$RUNNER_TEMP/signing.keychain-db
+          echo "$APPLE_CERTIFICATE" | base64 --decode -o $CERT
+          security create-keychain -p "" $KC
+          security set-keychain-settings -lut 21600 $KC
+          security unlock-keychain -p "" $KC
+          security import $CERT -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KC
+          security list-keychain -d user -s $KC
 
-      - name: Build universal macOS app
+      - name: Build (macOS universal)
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -58,17 +58,88 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: bun run tauri build --target universal-apple-darwin
 
-      - name: Get version from tag
-        id: version
-        run: echo "version=${GITHUB_REF_NAME:-${{ inputs.tag }}}" >> $GITHUB_OUTPUT
-
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: Punchly ${{ steps.version.outputs.version }}
+          tag_name: ${{ env.TAG }}
           draft: true
           generate_release_notes: true
+          files: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+
+  # ──────────────────────────────────────────────
+  # Windows — NSIS installer + MSI
+  # ──────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+
+      - name: Import Windows certificate
+        if: ${{ secrets.WINDOWS_CERTIFICATE != '' }}
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          $certPath = "$env:RUNNER_TEMP\cert.pfx"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+          echo "TAURI_WINDOWS_CERTIFICATE_PATH=$certPath" >> $env:GITHUB_ENV
+          echo "TAURI_WINDOWS_CERTIFICATE_PASSWORD=$env:WINDOWS_CERTIFICATE_PASSWORD" >> $env:GITHUB_ENV
+
+      - name: Build (Windows)
+        run: bun run tauri build
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          draft: true
           files: |
-            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
-            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
+
+  # ──────────────────────────────────────────────
+  # Linux — AppImage + .deb
+  # ──────────────────────────────────────────────
+  build-linux:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+
+      - name: Build (Linux)
+        run: bun run tauri build
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          draft: true
+          files: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb
