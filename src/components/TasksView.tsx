@@ -57,8 +57,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
       filters.push({ project: { operator: '=', values: [filterProject] } });
     }
     if (search.trim()) {
-      // 'subject' with '**' (contains) — works across all OpenProject versions
-      filters.push({ subject: { operator: '**', values: [search.trim()] } });
+      filters.push({ subject: { operator: '~', values: [search.trim()] } });
     }
     return filters;
   }, [onlyMine, currentUserId, filterStatus, filterProject, search]);
