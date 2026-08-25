@@ -29,7 +29,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [logError, setLogError] = useState('');
   const [theme, setTheme] = useState<Theme>(loadTheme);
-  const [pendingIdle, setPendingIdle] = useState<IdleEvent | null>(null);
+  const [idleQueue, setIdleQueue] = useState<IdleEvent[]>([]);
   const [tasksRefreshKey, setTasksRefreshKey] = useState(0);
   const isOnline = useNetworkStatus();
   const wasOfflineRef = useRef(false);
@@ -85,14 +85,16 @@ function App() {
   };
 
   const handleIdleEnd = useCallback((e: IdleEvent) => {
-    setPendingIdle(e);
+    setIdleQueue(prev => [...prev, e]);
   }, []);
 
-  const handleIdleKeep = () => setPendingIdle(null);
+  const handleIdleKeep = () => setIdleQueue(prev => prev.slice(1));
 
   const handleIdleDeduct = () => {
-    if (pendingIdle) deductIdle(pendingIdle.idleSeconds);
-    setPendingIdle(null);
+    setIdleQueue(prev => {
+      if (prev.length > 0) deductIdle(prev[0].idleSeconds);
+      return prev.slice(1);
+    });
   };
 
   const { isIdle } = useIdleDetection(
@@ -189,10 +191,10 @@ function App() {
         </main>
       </div>
 
-      {pendingIdle && (
+      {idleQueue.length > 0 && (
         <IdleDialog
-          idleSeconds={pendingIdle.idleSeconds}
-          idleStartedAt={pendingIdle.idleStartedAt}
+          idleSeconds={idleQueue[0].idleSeconds}
+          idleStartedAt={idleQueue[0].idleStartedAt}
           onKeep={handleIdleKeep}
           onDeduct={handleIdleDeduct}
         />
