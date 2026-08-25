@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { testConnection } from '../api/openproject';
 import type { Settings, User } from '../types/openproject';
 
@@ -6,6 +6,8 @@ interface Props {
   settings: Settings;
   onSave: (s: Settings) => void;
 }
+
+type SavedSection = 'connection' | 'idle' | null;
 
 export function SettingsView({ settings, onSave }: Props) {
   const [url, setUrl] = useState(settings.url);
@@ -15,6 +17,17 @@ export function SettingsView({ settings, onSave }: Props) {
   const [connStatus, setConnStatus] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState('');
+  const [savedSection, setSavedSection] = useState<SavedSection>(null);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(savedTimer.current), []);
+
+  const connectionDirty =
+    url.trim() !== settings.url || apiKey.trim() !== settings.apiKey;
+
+  const idleDirty =
+    idleEnabled !== settings.idleEnabled ||
+    idleThresholdMin !== settings.idleThresholdMin;
 
   const handleTest = async () => {
     setConnStatus('testing');
@@ -30,12 +43,44 @@ export function SettingsView({ settings, onSave }: Props) {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = (section: 'connection' | 'idle') => {
     onSave({ url: url.trim(), apiKey: apiKey.trim(), idleEnabled, idleThresholdMin });
+    setSavedSection(section);
+    clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSavedSection(null), 2500);
   };
 
   const inputCls = 'w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 outline-none focus:border-indigo-500 transition-colors';
   const labelCls = 'block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1.5';
+
+  const SaveButton = ({
+    section,
+    disabled,
+  }: {
+    section: 'connection' | 'idle';
+    disabled: boolean;
+  }) => {
+    const justSaved = savedSection === section && (section === 'connection' ? !connectionDirty : !idleDirty);
+    return (
+      <button
+        onClick={() => handleSave(section)}
+        disabled={disabled}
+        className={`px-4 py-2 text-sm font-semibold rounded-md text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer ${
+          justSaved ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-indigo-500 hover:bg-indigo-600'
+        }`}
+      >
+        {justSaved ? '✓ Saved' : 'Save'}
+      </button>
+    );
+  };
+
+  const DirtyBadge = ({ dirty }: { dirty: boolean }) =>
+    dirty ? (
+      <span className="flex items-center gap-1.5 text-xs text-amber-500 dark:text-amber-400">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 flex-shrink-0 animate-pulse" />
+        Unsaved changes
+      </span>
+    ) : null;
 
   return (
     <div className="h-full overflow-y-auto">
@@ -59,13 +104,16 @@ export function SettingsView({ settings, onSave }: Props) {
           <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-600">My Account → Access Tokens → API access key</p>
         </div>
 
-        <div className="flex gap-2.5">
-          <button onClick={handleTest} disabled={!url || !apiKey || connStatus === 'testing'} className="px-4 py-2 text-sm font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={handleTest}
+            disabled={!url || !apiKey || connStatus === 'testing'}
+            className="px-4 py-2 text-sm font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          >
             {connStatus === 'testing' ? 'Testing…' : 'Test Connection'}
           </button>
-          <button onClick={handleSave} disabled={!url || !apiKey} className="px-4 py-2 text-sm font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer">
-            Save
-          </button>
+          <SaveButton section="connection" disabled={!url || !apiKey} />
+          <DirtyBadge dirty={connectionDirty} />
         </div>
 
         {connStatus === 'ok' && user && (
@@ -120,9 +168,10 @@ export function SettingsView({ settings, onSave }: Props) {
           </div>
         )}
 
-        <button onClick={handleSave} disabled={!url || !apiKey} className="px-4 py-2 text-sm font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer">
-          Save
-        </button>
+        <div className="flex items-center gap-2.5">
+          <SaveButton section="idle" disabled={!url || !apiKey} />
+          <DirtyBadge dirty={idleDirty} />
+        </div>
       </div>
     </div>
   );
