@@ -322,6 +322,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(tracker.clone())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .setup(move |app| {
             use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
             use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
@@ -371,10 +372,25 @@ pub fn run() {
                         let _ = app_handle.emit("idle-started", ());
                     }
                     if let Some(payload) = emit_ended {
-                        // Bring window to front on the main thread, then emit the event.
                         let ah = app_handle.clone();
                         let payload_clone = payload.clone();
                         let _ = app_handle.run_on_main_thread(move || {
+                            use tauri_plugin_notification::NotificationExt;
+
+                            // Native notification — works across all Spaces and after unlock.
+                            let mins = payload_clone.idle_seconds / 60;
+                            let body = if mins >= 1 {
+                                format!("You were away for {} min — open Punchly to keep or deduct the time.", mins)
+                            } else {
+                                "You were briefly away — open Punchly to review idle time.".to_string()
+                            };
+                            let _ = ah.notification()
+                                .builder()
+                                .title("Idle time detected")
+                                .body(&body)
+                                .show();
+
+                            // Try to bring window to front (works when app is in same Space).
                             if let Some(w) = ah.get_webview_window("main") {
                                 let _ = w.unminimize();
                                 let _ = w.show();
