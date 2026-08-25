@@ -10,6 +10,8 @@ import { SettingsView } from './components/SettingsView';
 import { IdleDialog } from './components/IdleDialog';
 import { testConnection, logTime, idFromHref } from './api/openproject';
 import { invoke } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { useUpdateCheck } from './hooks/useUpdateCheck';
 import type { View, WorkPackage, User } from './types/openproject';
 
 type Theme = 'dark' | 'light';
@@ -21,6 +23,7 @@ function loadTheme(): Theme {
 function App() {
   const { settings, save: saveSettings, isConfigured } = useSettings();
   const { timer, elapsed, start, stop, deductIdle } = useTimer();
+  const { updateAvailable, latestVersion, releaseUrl, dismiss: dismissUpdate } = useUpdateCheck();
   const [view, setView] = useState<View>(isConfigured ? 'my-tasks' : 'settings');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [logError, setLogError] = useState('');
@@ -120,6 +123,21 @@ function App() {
         />
 
         <main className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
+          {updateAvailable && (
+            <div className="flex items-center justify-between gap-3 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-400 dark:text-indigo-300 text-xs px-5 py-2">
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                Punchly {latestVersion} is available.
+                <button
+                  onClick={() => openUrl(releaseUrl)}
+                  className="underline underline-offset-2 hover:text-indigo-200 transition-colors cursor-pointer"
+                >
+                  Download
+                </button>
+              </span>
+              <button onClick={dismissUpdate} className="hover:text-indigo-200 transition-colors cursor-pointer">✕</button>
+            </div>
+          )}
           {!isOnline && (
             <div className="flex items-center gap-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-xs px-5 py-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
