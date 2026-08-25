@@ -11,6 +11,11 @@ use tauri::{Emitter, Manager};
 // Zero = CGEventTap not running (fall back to user_idle polling).
 static LAST_EVENT_MS: AtomicU64 = AtomicU64::new(0);
 
+// Active timer: JS sets these so the Rust tray thread can update the title every second.
+// start_ms == 0 means no timer running.
+static TIMER_START_MS: AtomicU64 = AtomicU64::new(0);
+static TIMER_IDLE_DEDUCTED_SEC: AtomicU64 = AtomicU64::new(0);
+
 fn now_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64
 }
@@ -220,8 +225,8 @@ struct IdleEndedPayload {
     idle_started_at: u64,
 }
 
-// Keeps the TrayIcon alive for the lifetime of the app.
-struct TrayState(Mutex<tauri::tray::TrayIcon>);
+// Shared tray icon — Arc so both the Tauri command and the tray-update thread can access it.
+struct TrayState(Arc<Mutex<tauri::tray::TrayIcon>>);
 
 // ─── Commands ─────────────────────────────────────────────────────────────────
 
@@ -310,13 +315,19 @@ fn set_idle_tracking(
     }
 }
 
-/// Update the menu-bar tray title (shows current timer, macOS only).
+/// Called from JS when a timer starts or idle is deducted.
+/// The Rust tray thread uses these to update the menu-bar title every second.
 #[tauri::command]
-fn update_tray_title(state: tauri::State<TrayState>, title: String) {
-    if let Ok(tray) = state.0.lock() {
-        let text = if title.is_empty() { None } else { Some(title.as_str()) };
-        let _ = tray.set_title(text);
-    }
+fn set_rust_timer(start_ms: u64, idle_deducted_sec: u64) {
+    TIMER_START_MS.store(start_ms, Ordering::Relaxed);
+    TIMER_IDLE_DEDUCTED_SEC.store(idle_deducted_sec, Ordering::Relaxed);
+}
+
+/// Called from JS when the timer stops.
+#[tauri::command]
+fn clear_rust_timer() {
+    TIMER_START_MS.store(0, Ordering::Relaxed);
+    TIMER_IDLE_DEDUCTED_SEC.store(0, Ordering::Relaxed);
 }
 
 #[tauri::command]
@@ -651,7 +662,34 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            app.manage(TrayState(Mutex::new(tray)));
+            // Share tray between the state manager and the tray-update thread.
+            let tray_shared = Arc::new(Mutex::new(tray));
+            let tray_for_thread = tray_shared.clone();
+            app.manage(TrayState(tray_shared));
+
+            // ── Tray title thread — updates every second from Rust, immune to WKWebView throttling ──
+            thread::spawn(move || {
+                loop {
+                    thread::sleep(Duration::from_secs(1));
+                    let start = TIMER_START_MS.load(Ordering::Relaxed);
+                    if let Ok(tray) = tray_for_thread.lock() {
+                        if start == 0 {
+                            let _ = tray.set_title(None::<&str>);
+                        } else {
+                            let elapsed_secs = now_ms().saturating_sub(start) / 1000;
+                            let deducted = TIMER_IDLE_DEDUCTED_SEC.load(Ordering::Relaxed);
+                            let display = elapsed_secs.saturating_sub(deducted);
+                            let title = format!(
+                                "{}:{:02}:{:02}",
+                                display / 3600,
+                                (display % 3600) / 60,
+                                display % 60
+                            );
+                            let _ = tray.set_title(Some(title.as_str()));
+                        }
+                    }
+                }
+            });
 
             // ── Close → hide (keep alive in tray) ────────────────────────────────────
             if let Some(window) = app.get_webview_window("main") {
@@ -683,7 +721,8 @@ pub fn run() {
             set_idle_tracking,
             accessibility_granted,
             request_accessibility,
-            update_tray_title,
+            set_rust_timer,
+            clear_rust_timer,
             bring_to_front,
             get_project_wp_form,
             get_project_members,

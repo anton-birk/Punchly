@@ -102,18 +102,18 @@ function App() {
     handleIdleEnd,
   );
 
-  // Keep menu-bar tray title in sync with the running timer.
+  // Sync timer state to Rust so the tray-update thread (immune to WKWebView throttling)
+  // can update the menu-bar title every second without JS involvement.
   useEffect(() => {
     if (timer?.isRunning) {
-      const h = Math.floor(elapsed / 3600);
-      const m = Math.floor((elapsed % 3600) / 60);
-      const s = elapsed % 60;
-      const title = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-      invoke('update_tray_title', { title }).catch(() => {});
+      invoke('set_rust_timer', {
+        startMs: timer.startTime,
+        idleDeductedSec: timer.idleDeductedSec ?? 0,
+      }).catch(() => {});
     } else {
-      invoke('update_tray_title', { title: '' }).catch(() => {});
+      invoke('clear_rust_timer').catch(() => {});
     }
-  }, [elapsed, timer?.isRunning]);
+  }, [timer?.isRunning, timer?.startTime, timer?.idleDeductedSec]);
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
