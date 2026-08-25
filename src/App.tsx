@@ -12,6 +12,7 @@ import {idFromHref, logTime, testConnection} from './api/openproject';
 import {invoke} from '@tauri-apps/api/core';
 import {openUrl} from '@tauri-apps/plugin-opener';
 import {isPermissionGranted, requestPermission} from '@tauri-apps/plugin-notification';
+import { X } from 'lucide-react';
 import {useUpdateCheck} from './hooks/useUpdateCheck';
 import type {User, View, WorkPackage} from './types/openproject';
 
@@ -157,7 +158,7 @@ function App() {
 
 
           <main className="app-main flex-1 flex flex-col overflow-hidden">
-            <div data-tauri-drag-region className="h-7 cursor-grab active:cursor-grabbing"/>
+
             {updateAvailable && (
               <div
                 className="brand-soft brand-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
@@ -171,7 +172,7 @@ function App() {
                   Download
                 </button>
               </span>
-                <button onClick={dismissUpdate} className="link-accent transition-colors cursor-pointer">✕</button>
+                <button onClick={dismissUpdate} className="link-accent transition-colors cursor-pointer"><X size={14} /></button>
               </div>
             )}
             {!isOnline && (
@@ -184,7 +185,7 @@ function App() {
               <div
                 className="danger-chip danger-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
                 <span>{logError}</span>
-                <button onClick={() => setLogError('')} className="hover:opacity-80">✕</button>
+                <button onClick={() => setLogError('')} className="hover:opacity-80"><X size={14} /></button>
               </div>
             )}
 

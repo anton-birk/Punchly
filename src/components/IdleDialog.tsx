@@ -1,4 +1,5 @@
 import { formatDuration } from '../api/openproject';
+import { Coffee } from 'lucide-react';
 
 interface Props {
   idleSeconds: number;
@@ -14,7 +15,7 @@ export function IdleDialog({ idleSeconds, idleStartedAt, onKeep, onDeduct }: Pro
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-[360px] shadow-2xl p-6 flex flex-col gap-5">
         <div className="flex items-start gap-3">
-          <span className="text-2xl mt-0.5">💤</span>
+          <Coffee size={22} className="mt-0.5 shrink-0 text-zinc-400" />
           <div>
             <h3 className="text-sm font-bold mb-1">Idle time detected</h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">

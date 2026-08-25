@@ -3,6 +3,7 @@ import { getWorkPackages, getStatuses, getProjects, parseISODuration } from '../
 import type { Settings, WorkPackage, Status, Project } from '../types/openproject';
 import { CreateTaskModal } from './CreateTaskModal';
 import { TaskDetailPanel, StatusDot } from './TaskDetailPanel';
+import { Clock, Play, Square } from "lucide-react";
 
 interface Props {
   settings: Settings;
@@ -106,6 +107,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
     <div className="flex h-full overflow-hidden">
       {/* Task list column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <div data-tauri-drag-region className="h-7 cursor-grab active:cursor-grabbing"/>
         {/* Header */}
         <div className="flex items-center justify-between px-6 pb-0">
           <h2 className="text-main text-lg font-bold">{onlyMine ? 'My Tasks' : 'All Tasks'}</h2>
@@ -168,17 +170,19 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
             const spent = parseISODuration(wp.spentTime);
             const statusObj = statuses.find((s) => s.name === statusTitle);
 
+            const taskStateCls = isTracking && isSelected
+              ? 'task-card-tracking-selected'
+              : isTracking
+              ? 'task-card-tracking'
+              : isSelected
+              ? 'task-card-selected'
+              : 'surface hover:border-[var(--app-border-strong)]';
+
             return (
               <div
                 key={wp.id}
                 onClick={() => setSelectedWp(isSelected ? null : wp)}
-                className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors cursor-pointer ${
-                  isSelected
-                    ? 'brand-soft brand-border'
-                    : isTracking
-                    ? 'success-chip success-border'
-                    : 'surface hover:border-[var(--app-border-strong)]'
-                }`}
+                className={`task-card flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors cursor-pointer ${taskStateCls}`}
               >
                 {/* Timer button */}
                 <button
@@ -190,7 +194,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
                       : 'text-subtle border-[var(--app-border-strong)] hover:border-[var(--brand)] hover:text-[var(--brand)] hover:bg-[var(--brand-soft)]'
                   }`}
                 >
-                  {isTracking ? '■' : '▶'}
+                  {isTracking ? <Square size={22}/> : <Play size={22}/>}
                 </button>
 
                 {/* Task info */}
@@ -219,7 +223,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
                     )}
                     {spent.hours > 0 && (
                       <span className="success-chip ml-auto text-[11px] font-semibold px-1.5 py-0.5 rounded tabular flex-shrink-0">
-                        ⏱ {spent.display}
+                        <Clock size={11} className="inline mr-0.5" /> {spent.display}
                       </span>
                     )}
                   </div>

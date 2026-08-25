@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { getProjects, getTypes, getPriorities, createWorkPackage, getProjectWpForm, getProjectVersions, uploadAttachment } from '../api/openproject';
+import { X } from 'lucide-react';
 import type { Settings, Project, WorkPackageType, Priority, Assignee, Version } from '../types/openproject';
 
 interface Props {
@@ -113,7 +114,7 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
       >
         <div className="divider flex items-center justify-between px-5 py-4 border-b">
           <h3 className="text-main text-sm font-bold">New Task</h3>
-          <button onClick={onClose} className="text-subtle hover:text-[var(--app-text)] text-lg px-1 cursor-pointer">✕</button>
+          <button onClick={onClose} className="text-subtle hover:text-[var(--app-text)] p-1 cursor-pointer"><X size={16} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto">
@@ -186,7 +187,7 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
                       <span className="text-subtle text-base">{file.type.startsWith('image/') ? '🖼' : '📎'}</span>
                       <span className="text-main flex-1 truncate">{file.name}</span>
                       <span className="text-subtle text-xs shrink-0">{formatBytes(file.size)}</span>
-                      <button type="button" onClick={() => removeFile(i)} className="text-subtle hover:text-[var(--danger)] cursor-pointer ml-1 text-base leading-none">✕</button>
+                      <button type="button" onClick={() => removeFile(i)} className="text-subtle hover:text-[var(--danger)] cursor-pointer ml-1"><X size={13} /></button>
                     </div>
                   ))}
                 </div>

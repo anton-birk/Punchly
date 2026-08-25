@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { testConnection } from '../api/openproject';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 import { invoke } from '@tauri-apps/api/core';
+import { Check } from 'lucide-react';
 import type { Settings, User } from '../types/openproject';
 
 interface Props {
@@ -102,7 +103,7 @@ export function SettingsView({ settings, onSave }: Props) {
           justSaved ? 'bg-[var(--success)] hover:opacity-90' : 'btn-primary'
         }`}
       >
-        {justSaved ? '✓ Saved' : 'Save'}
+        {justSaved ? <span className="flex items-center gap-1.5"><Check size={14} /> Saved</span> : 'Save'}
       </button>
     );
   };

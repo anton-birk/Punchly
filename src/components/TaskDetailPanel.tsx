@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { getTimeEntries, getAllowedStatuses, updateWorkPackage, parseISODuration, idFromHref } from '../api/openproject';
 import type { Settings, WorkPackage, TimeEntry, Status } from '../types/openproject';
+import { Play, Square, X } from "lucide-react";
 
 interface Props {
   wp: WorkPackage;
@@ -105,16 +106,16 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {isTracking ? (
-            <button onClick={onStopTimer} className="btn-danger px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer">
-              ■ Stop
+            <button onClick={onStopTimer} className="btn-danger px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5">
+              <Square size={14}/> Stop
             </button>
           ) : (
-            <button onClick={() => onStartTimer(wp)} className="btn-primary px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer">
-              ▶ Track
+            <button onClick={() => onStartTimer(wp)} className="btn-primary px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5">
+              <Play size={14}/> Track
             </button>
           )}
           <button onClick={onClose} className="text-subtle nav-idle w-7 h-7 flex items-center justify-center rounded transition-colors cursor-pointer">
-            ✕
+            <X size={16} />
           </button>
         </div>
       </div>
