@@ -23,7 +23,9 @@ function loadTheme(): Theme {
 
 function App() {
   const { settings, save: saveSettings, isConfigured } = useSettings();
-  const { timer, elapsed, start, stop, deductIdle } = useTimer();
+  const { timer, elapsed, start, stop, pauseTimer, resumeTimer } = useTimer();
+  const pausedAtRef = useRef<number | null>(null);
+  const pendingDeductRef = useRef<number>(0);
   const { updateAvailable, latestVersion, releaseUrl, dismiss: dismissUpdate } = useUpdateCheck();
   const [view, setView] = useState<View>(isConfigured ? 'my-tasks' : 'settings');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -85,17 +87,34 @@ function App() {
   };
 
   const handleIdleEnd = useCallback((e: IdleEvent) => {
-    setIdleQueue(prev => [...prev, e]);
-  }, []);
-
-  const handleIdleKeep = () => setIdleQueue(prev => prev.slice(1));
-
-  const handleIdleDeduct = () => {
     setIdleQueue(prev => {
-      if (prev.length > 0) deductIdle(prev[0].idleSeconds);
-      return prev.slice(1);
+      if (prev.length === 0) {
+        // First idle in queue — pause the timer and freeze the tray.
+        pausedAtRef.current = Date.now();
+        pendingDeductRef.current = 0;
+        pauseTimer();
+        invoke('clear_rust_timer').catch(() => {});
+      }
+      return [...prev, e];
     });
-  };
+  }, [pauseTimer]);
+
+  const dismissFirst = useCallback((idleSecsToDeduct: number) => {
+    pendingDeductRef.current += idleSecsToDeduct;
+    setIdleQueue(prev => {
+      const next = prev.slice(1);
+      if (next.length === 0 && pausedAtRef.current !== null) {
+        // All dialogs answered — resume, deducting idle time + time spent on dialogs.
+        const dialogOpenSecs = Math.floor((Date.now() - pausedAtRef.current) / 1000);
+        resumeTimer(dialogOpenSecs + pendingDeductRef.current);
+        pausedAtRef.current = null;
+      }
+      return next;
+    });
+  }, [resumeTimer]);
+
+  const handleIdleKeep = () => dismissFirst(0);
+  const handleIdleDeduct = () => dismissFirst(idleQueue[0]?.idleSeconds ?? 0);
 
   const { isIdle } = useIdleDetection(
     settings.idleEnabled,
