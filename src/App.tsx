@@ -9,6 +9,7 @@ import { TasksView } from './components/TasksView';
 import { SettingsView } from './components/SettingsView';
 import { IdleDialog } from './components/IdleDialog';
 import { testConnection, logTime, idFromHref } from './api/openproject';
+import { invoke } from '@tauri-apps/api/core';
 import type { View, WorkPackage, User } from './types/openproject';
 
 type Theme = 'dark' | 'light';
@@ -89,6 +90,19 @@ function App() {
     timer?.isRunning ?? false,
     handleIdleEnd,
   );
+
+  // Keep menu-bar tray title in sync with the running timer.
+  useEffect(() => {
+    if (timer?.isRunning) {
+      const h = Math.floor(elapsed / 3600);
+      const m = Math.floor((elapsed % 3600) / 60);
+      const s = elapsed % 60;
+      const title = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      invoke('update_tray_title', { title }).catch(() => {});
+    } else {
+      invoke('update_tray_title', { title: '' }).catch(() => {});
+    }
+  }, [elapsed, timer?.isRunning]);
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>

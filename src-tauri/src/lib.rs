@@ -1,6 +1,10 @@
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use reqwest::Client;
 use serde_json::Value;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tauri::{Emitter, Manager};
 use user_idle::UserIdle;
 
 fn make_client() -> Result<Client, String> {
@@ -63,6 +67,32 @@ async fn api_patch(url: &str, api_key: &str, path: &str, body: Value) -> Result<
     Ok(result)
 }
 
+// ─── Idle tracker state (lives in Rust, unaffected by WKWebView throttling) ──
+
+#[derive(Default)]
+struct IdleTracker {
+    enabled: bool,
+    threshold_secs: u64,
+    is_idle: bool,
+    idle_start_ms: u64,
+    peak_idle_secs: u64,
+}
+
+type SharedIdleTracker = Arc<Mutex<IdleTracker>>;
+
+#[derive(serde::Serialize, Clone)]
+struct IdleEndedPayload {
+    #[serde(rename = "idleSeconds")]
+    idle_seconds: u64,
+    #[serde(rename = "idleStartedAt")]
+    idle_started_at: u64,
+}
+
+// Keeps the TrayIcon alive for the lifetime of the app.
+struct TrayState(Mutex<tauri::tray::TrayIcon>);
+
+// ─── Commands ─────────────────────────────────────────────────────────────────
+
 #[tauri::command]
 async fn test_connection(url: String, api_key: String) -> Result<Value, String> {
     api_get(&url, &api_key, "/api/v3/users/me", vec![]).await
@@ -114,9 +144,34 @@ fn get_idle_seconds() -> u64 {
     UserIdle::get_time().map(|t| t.as_seconds()).unwrap_or(0)
 }
 
+/// Enable or disable Rust-side idle tracking. Called from JS when timer starts/stops.
+#[tauri::command]
+fn set_idle_tracking(
+    state: tauri::State<SharedIdleTracker>,
+    enabled: bool,
+    threshold_secs: u64,
+) {
+    let mut t = state.lock().unwrap();
+    t.enabled = enabled;
+    t.threshold_secs = threshold_secs;
+    if !enabled {
+        t.is_idle = false;
+        t.idle_start_ms = 0;
+        t.peak_idle_secs = 0;
+    }
+}
+
+/// Update the menu-bar tray title (shows current timer, macOS only).
+#[tauri::command]
+fn update_tray_title(state: tauri::State<TrayState>, title: String) {
+    if let Ok(tray) = state.0.lock() {
+        let text = if title.is_empty() { None } else { Some(title.as_str()) };
+        let _ = tray.set_title(text);
+    }
+}
+
 #[tauri::command]
 fn bring_to_front(app: tauri::AppHandle) {
-    use tauri::Manager;
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
         let _ = window.show();
@@ -258,10 +313,144 @@ async fn get_time_entries(url: String, api_key: String, work_package_id: i64) ->
     }
 }
 
+// ─── Entry point ──────────────────────────────────────────────────────────────
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let tracker: SharedIdleTracker = Arc::new(Mutex::new(IdleTracker::default()));
+
     tauri::Builder::default()
+        .manage(tracker.clone())
         .plugin(tauri_plugin_opener::init())
+        .setup(move |app| {
+            use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+            use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
+
+            // ── Background thread: idle detection (unaffected by WKWebView throttle) ──
+            let app_handle = app.handle().clone();
+            let tracker_thread = tracker.clone();
+            thread::spawn(move || {
+                loop {
+                    thread::sleep(Duration::from_secs(5));
+
+                    let idle_secs = UserIdle::get_time()
+                        .map(|t| t.as_seconds())
+                        .unwrap_or(0);
+                    let now_ms = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_millis() as u64;
+
+                    let mut emit_started = false;
+                    let mut emit_ended: Option<IdleEndedPayload> = None;
+
+                    {
+                        let mut t = tracker_thread.lock().unwrap();
+                        if t.enabled {
+                            let threshold = t.threshold_secs;
+                            if idle_secs >= threshold && !t.is_idle {
+                                t.idle_start_ms = now_ms.saturating_sub(idle_secs * 1000);
+                                t.peak_idle_secs = idle_secs;
+                                t.is_idle = true;
+                                emit_started = true;
+                            } else if idle_secs >= threshold {
+                                t.peak_idle_secs = idle_secs;
+                            } else if idle_secs < threshold && t.is_idle {
+                                emit_ended = Some(IdleEndedPayload {
+                                    idle_seconds: t.peak_idle_secs,
+                                    idle_started_at: t.idle_start_ms,
+                                });
+                                t.is_idle = false;
+                                t.idle_start_ms = 0;
+                                t.peak_idle_secs = 0;
+                            }
+                        }
+                    } // lock released before any emit
+
+                    if emit_started {
+                        let _ = app_handle.emit("idle-started", ());
+                    }
+                    if let Some(payload) = emit_ended {
+                        // Bring window to front on the main thread, then emit the event.
+                        let ah = app_handle.clone();
+                        let payload_clone = payload.clone();
+                        let _ = app_handle.run_on_main_thread(move || {
+                            if let Some(w) = ah.get_webview_window("main") {
+                                let _ = w.unminimize();
+                                let _ = w.show();
+                                let _ = w.set_focus();
+                            }
+                            #[cfg(target_os = "macos")]
+                            unsafe {
+                                use objc::{class, msg_send, sel, sel_impl};
+                                use objc::runtime::YES;
+                                let ns_app: *mut objc::runtime::Object =
+                                    msg_send![class!(NSApplication), sharedApplication];
+                                let _: () = msg_send![ns_app, activateIgnoringOtherApps: YES];
+                            }
+                            let _ = ah.emit("idle-ended", payload_clone);
+                        });
+                    }
+                }
+            });
+
+            // ── Tray icon ─────────────────────────────────────────────────────────────
+            let show_item = MenuItemBuilder::with_id("show", "Show Punchly").build(app)?;
+            let sep = PredefinedMenuItem::separator(app)?;
+            let quit_item = MenuItemBuilder::with_id("quit", "Quit Punchly").build(app)?;
+            let tray_menu = MenuBuilder::new(app)
+                .item(&show_item)
+                .item(&sep)
+                .item(&quit_item)
+                .build()?;
+
+            let tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&tray_menu)
+                .tooltip("Punchly")
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.unminimize();
+                            let _ = w.show();
+                            let _ = w.set_focus();
+                        }
+                    }
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.unminimize();
+                            let _ = w.show();
+                            let _ = w.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            app.manage(TrayState(Mutex::new(tray)));
+
+            // ── Close → hide (keep alive in tray) ────────────────────────────────────
+            if let Some(window) = app.get_webview_window("main") {
+                let win = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = win.hide();
+                    }
+                });
+            }
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             test_connection,
             get_work_packages,
@@ -276,6 +465,8 @@ pub fn run() {
             get_time_entries,
             get_work_package_form,
             get_idle_seconds,
+            set_idle_tracking,
+            update_tray_title,
             bring_to_front,
             get_project_wp_form,
             get_project_members,
