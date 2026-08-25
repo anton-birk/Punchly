@@ -11,6 +11,7 @@ import { IdleDialog } from './components/IdleDialog';
 import { testConnection, logTime, idFromHref } from './api/openproject';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { useUpdateCheck } from './hooks/useUpdateCheck';
 import type { View, WorkPackage, User } from './types/openproject';
 
@@ -32,6 +33,13 @@ function App() {
   const [tasksRefreshKey, setTasksRefreshKey] = useState(0);
   const isOnline = useNetworkStatus();
   const wasOfflineRef = useRef(false);
+
+  // Auto-request notification permission on first launch.
+  useEffect(() => {
+    isPermissionGranted().then(granted => {
+      if (!granted) requestPermission();
+    });
+  }, []);
 
   useEffect(() => {
     if (!isConfigured) return;

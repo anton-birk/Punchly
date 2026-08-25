@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { testConnection } from '../api/openproject';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
+import { invoke } from '@tauri-apps/api/core';
 import type { Settings, User } from '../types/openproject';
 
 interface Props {
@@ -21,12 +22,27 @@ export function SettingsView({ settings, onSave }: Props) {
   const [savedSection, setSavedSection] = useState<SavedSection>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [notifGranted, setNotifGranted] = useState<boolean | null>(null);
+  const [accessibilityGranted, setAccessibilityGranted] = useState<boolean | null>(null);
 
   useEffect(() => () => clearTimeout(savedTimer.current), []);
 
   useEffect(() => {
     isPermissionGranted().then(setNotifGranted).catch(() => setNotifGranted(false));
+    invoke<boolean>('accessibility_granted').then(setAccessibilityGranted).catch(() => setAccessibilityGranted(false));
   }, []);
+
+  const handleRequestAccessibility = async () => {
+    await invoke('request_accessibility').catch(() => {});
+    // Poll until user grants (System Settings dialog is non-blocking)
+    const poll = setInterval(async () => {
+      const granted = await invoke<boolean>('accessibility_granted').catch(() => false);
+      if (granted) {
+        setAccessibilityGranted(true);
+        clearInterval(poll);
+      }
+    }, 2000);
+    setTimeout(() => clearInterval(poll), 60_000); // stop after 60s
+  };
 
   const connectionDirty =
     url.trim() !== settings.url || apiKey.trim() !== settings.apiKey;
@@ -64,6 +80,8 @@ export function SettingsView({ settings, onSave }: Props) {
     clearTimeout(savedTimer.current);
     savedTimer.current = setTimeout(() => setSavedSection(null), 2500);
   };
+
+  const isMacOS = navigator.platform.startsWith('Mac') || navigator.userAgent.includes('Macintosh');
 
   const inputCls = 'w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 outline-none focus:border-indigo-500 transition-colors';
   const labelCls = 'block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1.5';
@@ -188,6 +206,43 @@ export function SettingsView({ settings, onSave }: Props) {
           <DirtyBadge dirty={idleDirty} />
         </div>
       </div>
+
+      {/* Accessibility — macOS only */}
+      {isMacOS && <div className="mx-6 mt-4 max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+        <h3 className="text-sm font-semibold mb-1 text-zinc-700 dark:text-zinc-300">Accessibility (Idle Detection)</h3>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-5">
+          Allows Punchly to track keyboard and mouse events to precisely measure idle time — the same approach used by HubStaff. Without this, detection relies on polling which may miss idle periods after screen lock.
+        </p>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {accessibilityGranted === null && <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 flex-shrink-0" />}
+            {accessibilityGranted === true && <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />}
+            {accessibilityGranted === false && <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />}
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+              {accessibilityGranted === null && 'Checking…'}
+              {accessibilityGranted === true && 'Accessibility granted — event-based idle tracking active'}
+              {accessibilityGranted === false && 'Accessibility not granted — using polling fallback'}
+            </span>
+          </div>
+          {accessibilityGranted === false && (
+            <button
+              onClick={handleRequestAccessibility}
+              className="ml-4 shrink-0 px-3 py-1.5 text-xs font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white transition-colors cursor-pointer"
+            >
+              Grant Access
+            </button>
+          )}
+        </div>
+
+        {accessibilityGranted === false && (
+          <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
+            If the dialog doesn't appear, go to{' '}
+            <span className="font-medium text-zinc-600 dark:text-zinc-300">System Settings → Privacy & Security → Accessibility</span>{' '}
+            and enable Punchly manually.
+          </p>
+        )}
+      </div>}
 
       {/* Notifications */}
       <div className="mx-6 mt-4 mb-6 max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
