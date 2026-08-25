@@ -182,7 +182,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
               <div
                 key={wp.id}
                 onClick={() => setSelectedWp(isSelected ? null : wp)}
-                className={`task-card flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors cursor-pointer ${taskStateCls}`}
+                className={` flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors cursor-pointer ${taskStateCls}`}
               >
                 {/* Timer button */}
                 <button
