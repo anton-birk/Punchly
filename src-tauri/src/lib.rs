@@ -225,7 +225,8 @@ struct IdleEndedPayload {
     idle_started_at: u64,
 }
 
-// Shared tray icon — Arc so both the Tauri command and the tray-update thread can access it.
+// Shared tray icon — keeps the TrayIcon alive for the app lifetime via Tauri's state manager.
+#[allow(dead_code)]
 struct TrayState(Arc<Mutex<tauri::tray::TrayIcon>>);
 
 // ─── Commands ─────────────────────────────────────────────────────────────────
