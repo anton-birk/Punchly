@@ -506,11 +506,15 @@ pub fn run() {
                 let _: () = msg_send![activity, retain];
             }
 
-            // ── macOS: request Accessibility on first launch if not granted ──
+            // ── macOS: request Accessibility after a short delay so the system daemon
+            //    has time to return the correct trust status before we prompt. ──
             #[cfg(target_os = "macos")]
-            if !macos_events::is_accessibility_granted() {
-                macos_events::request_accessibility();
-            }
+            thread::spawn(|| {
+                thread::sleep(Duration::from_secs(3));
+                if !macos_events::is_accessibility_granted() {
+                    macos_events::request_accessibility();
+                }
+            });
 
             // ── macOS: CGEventTap thread — retries until Accessibility is granted ──
             #[cfg(target_os = "macos")]
