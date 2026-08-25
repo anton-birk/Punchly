@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { testConnection } from '../api/openproject';
+import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 import type { Settings, User } from '../types/openproject';
 
 interface Props {
@@ -19,8 +20,13 @@ export function SettingsView({ settings, onSave }: Props) {
   const [error, setError] = useState('');
   const [savedSection, setSavedSection] = useState<SavedSection>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [notifGranted, setNotifGranted] = useState<boolean | null>(null);
 
   useEffect(() => () => clearTimeout(savedTimer.current), []);
+
+  useEffect(() => {
+    isPermissionGranted().then(setNotifGranted).catch(() => setNotifGranted(false));
+  }, []);
 
   const connectionDirty =
     url.trim() !== settings.url || apiKey.trim() !== settings.apiKey;
@@ -40,6 +46,15 @@ export function SettingsView({ settings, onSave }: Props) {
     } catch (e) {
       setError(String(e));
       setConnStatus('error');
+    }
+  };
+
+  const handleRequestNotifPermission = async () => {
+    const result = await requestPermission();
+    const granted = result === 'granted';
+    setNotifGranted(granted);
+    if (granted) {
+      sendNotification({ title: 'Punchly', body: 'Notifications are working!' });
     }
   };
 
@@ -172,6 +187,58 @@ export function SettingsView({ settings, onSave }: Props) {
           <SaveButton section="idle" disabled={!url || !apiKey} />
           <DirtyBadge dirty={idleDirty} />
         </div>
+      </div>
+
+      {/* Notifications */}
+      <div className="mx-6 mt-4 mb-6 max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+        <h3 className="text-sm font-semibold mb-1 text-zinc-700 dark:text-zinc-300">Notifications</h3>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-5">
+          Punchly shows a system notification when idle time is detected — this works even when the app is in another Space or behind other windows.
+        </p>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {notifGranted === null && (
+              <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 flex-shrink-0" />
+            )}
+            {notifGranted === true && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+            )}
+            {notifGranted === false && (
+              <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+            )}
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+              {notifGranted === null && 'Checking…'}
+              {notifGranted === true && 'Notifications allowed'}
+              {notifGranted === false && 'Notifications not allowed'}
+            </span>
+          </div>
+
+          {notifGranted === false && (
+            <button
+              onClick={handleRequestNotifPermission}
+              className="px-3 py-1.5 text-xs font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white transition-colors cursor-pointer"
+            >
+              Allow Notifications
+            </button>
+          )}
+          {notifGranted === true && (
+            <button
+              onClick={() => sendNotification({ title: 'Punchly', body: 'Test notification is working!' })}
+              className="px-3 py-1.5 text-xs font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Send Test
+            </button>
+          )}
+        </div>
+
+        {notifGranted === false && (
+          <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
+            If the dialog doesn't appear, go to{' '}
+            <span className="font-medium text-zinc-600 dark:text-zinc-300">System Settings → Notifications → Punchly</span>{' '}
+            and enable notifications manually.
+          </p>
+        )}
       </div>
     </div>
   );
