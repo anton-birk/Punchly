@@ -20,6 +20,9 @@
   --brand-hover: #0d7d70;
   --brand-soft: #dff5ee;
   --brand-border: #a7d9ce;
+  --selected: #6e61d9;
+  --selected-soft: #eeebff;
+  --selected-border: #bbb3f2;
   --success: #168a63;
   --success-soft: #ddf3e8;
   --success-border: #a9d9c7;
@@ -50,6 +53,9 @@
   --brand-hover: #5be2c2;
   --brand-soft: #12382f;
   --brand-border: #1f6e5d;
+  --selected: #a79bff;
+  --selected-soft: #211f3d;
+  --selected-border: #524aa1;
   --success: #43d18f;
   --success-soft: #123427;
   --success-border: #226347;
@@ -195,6 +201,34 @@ body {
 
 .brand-soft {
   background: color-mix(in srgb, var(--brand-soft) 72%, transparent);
+}
+
+.task-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card-selected {
+  background: color-mix(in srgb, var(--selected-soft) 88%, var(--app-surface) 12%);
+  border-color: var(--selected-border);
+  box-shadow: inset 3px 0 0 var(--selected);
+}
+
+.task-card-selected:hover {
+  border-color: var(--selected);
+}
+
+.task-card-tracking {
+  background: color-mix(in srgb, var(--success-soft) 86%, var(--app-surface) 14%);
+  border-color: var(--success-border);
+}
+
+.task-card-tracking-selected {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--selected-soft) 92%, transparent) 0 10px, transparent 10px),
+    color-mix(in srgb, var(--success-soft) 86%, var(--app-surface) 14%);
+  border-color: var(--success-border);
+  box-shadow: inset 3px 0 0 var(--selected);
 }
 
 .success-chip {
