@@ -21,33 +21,33 @@ const nav: { id: View; label: string; icon: string }[] = [
 
 export function Sidebar({ view, onNavigate, timerRunning, timerElapsed, timerSubject, isIdle, onStopTimer, theme, onToggleTheme }: Props) {
   return (
-    <aside className="w-[230px] min-w-[230px] bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
-      <div className="flex items-center gap-2.5 px-4 py-5 border-b border-zinc-200 dark:border-zinc-800">
+    <aside className="sidebar-shell w-[230px] min-w-[230px] border-r flex flex-col pt-3">
+      <div className="divider flex items-center gap-2.5 px-4 py-5 border-b">
         <span className="text-xl">⏱</span>
-        <span className="text-[17px] font-bold tracking-tight">Punchly</span>
+        <span className="text-main text-[17px] font-bold tracking-tight">Punchly</span>
       </div>
 
       {timerRunning && (
         <div className={`mx-3 mt-3.5 rounded-lg p-3.5 flex flex-col gap-1.5 border ${
           isIdle
-            ? 'bg-amber-500/10 border-amber-500/30'
-            : 'bg-emerald-500/10 border-emerald-500/25'
+            ? 'warning-chip warning-border'
+            : 'success-chip success-border'
         }`}>
           <div className="flex items-center gap-1.5">
-            <div className={`text-[10px] font-semibold uppercase tracking-widest ${isIdle ? 'text-amber-500' : 'text-emerald-500'}`}>
+            <div className="text-[10px] font-semibold uppercase tracking-widest">
               {isIdle ? 'Idle' : 'Tracking'}
             </div>
             {isIdle && <span className="text-[10px]">💤</span>}
           </div>
-          <div className={`tabular text-[26px] font-bold leading-none ${isIdle ? 'text-amber-500 opacity-60' : 'text-emerald-500'}`}>
+          <div className={`tabular text-[26px] font-bold leading-none ${isIdle ? 'opacity-70' : ''}`}>
             {formatDuration(timerElapsed)}
           </div>
-          <div className="text-xs text-zinc-400 dark:text-zinc-500 truncate" title={timerSubject ?? ''}>
+          <div className="text-subtle text-xs truncate" title={timerSubject ?? ''}>
             {timerSubject}
           </div>
           <button
             onClick={onStopTimer}
-            className="mt-1 w-full bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded py-1.5 px-3 transition-colors cursor-pointer"
+            className="btn-danger mt-1 w-full text-xs font-semibold rounded py-1.5 px-3 transition-colors cursor-pointer"
           >
             ■ Stop
           </button>
@@ -61,8 +61,8 @@ export function Sidebar({ view, onNavigate, timerRunning, timerElapsed, timerSub
             onClick={() => onNavigate(item.id)}
             className={`flex items-center gap-2.5 w-full text-left px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
               view === item.id
-                ? 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400'
-                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100'
+                ? 'nav-active'
+                : 'nav-idle text-muted'
             }`}
           >
             <span className="w-4.5 text-center text-[15px]">{item.icon}</span>
@@ -71,10 +71,10 @@ export function Sidebar({ view, onNavigate, timerRunning, timerElapsed, timerSub
         ))}
       </nav>
 
-      <div className="p-3 border-t border-zinc-200 dark:border-zinc-800">
+      <div className="divider p-3 border-t">
         <button
           onClick={onToggleTheme}
-          className="flex items-center gap-2 w-full px-2.5 py-2 rounded-md text-sm text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+          className="nav-idle text-subtle flex items-center gap-2 w-full px-2.5 py-2 rounded-md text-sm transition-colors cursor-pointer"
         >
           <span>{theme === 'dark' ? '☀' : '🌙'}</span>
           <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>

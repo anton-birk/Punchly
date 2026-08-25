@@ -138,7 +138,7 @@ function App() {
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
-      <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased">
+      <div className="app-shell flex h-screen overflow-hidden font-sans antialiased">
         <Sidebar
           view={view}
           onNavigate={setView}
@@ -151,32 +151,32 @@ function App() {
           onToggleTheme={toggleTheme}
         />
 
-        <main className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
+        <main className="app-main flex-1 flex flex-col overflow-hidden">
           {updateAvailable && (
-            <div className="flex items-center justify-between gap-3 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-400 dark:text-indigo-300 text-xs px-5 py-2">
+            <div className="brand-soft brand-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
               <span className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand)] flex-shrink-0" />
                 Punchly {latestVersion} is available.
                 <button
                   onClick={() => openUrl(releaseUrl)}
-                  className="underline underline-offset-2 hover:text-indigo-200 transition-colors cursor-pointer"
+                  className="link-accent underline underline-offset-2 transition-colors cursor-pointer"
                 >
                   Download
                 </button>
               </span>
-              <button onClick={dismissUpdate} className="hover:text-indigo-200 transition-colors cursor-pointer">✕</button>
+              <button onClick={dismissUpdate} className="link-accent transition-colors cursor-pointer">✕</button>
             </div>
           )}
           {!isOnline && (
-            <div className="flex items-center gap-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-xs px-5 py-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+            <div className="warning-chip warning-border flex items-center gap-2 border-b text-xs px-5 py-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)] flex-shrink-0" />
               No internet connection — timer is still running, changes will sync when back online.
             </div>
           )}
           {logError && (
-            <div className="flex items-center justify-between gap-3 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs px-5 py-2">
+            <div className="danger-chip danger-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
               <span>{logError}</span>
-              <button onClick={() => setLogError('')} className="hover:text-red-300">✕</button>
+              <button onClick={() => setLogError('')} className="hover:opacity-80">✕</button>
             </div>
           )}
 

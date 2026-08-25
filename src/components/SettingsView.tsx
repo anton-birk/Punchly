@@ -83,8 +83,8 @@ export function SettingsView({ settings, onSave }: Props) {
 
   const isMacOS = navigator.platform.startsWith('Mac') || navigator.userAgent.includes('Macintosh');
 
-  const inputCls = 'w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 outline-none focus:border-indigo-500 transition-colors';
-  const labelCls = 'block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1.5';
+  const inputCls = 'input-field w-full border rounded-md px-3 py-2 text-sm outline-none transition-colors';
+  const labelCls = 'text-subtle block text-xs font-semibold uppercase tracking-wide mb-1.5';
 
   const SaveButton = ({
     section,
@@ -99,7 +99,7 @@ export function SettingsView({ settings, onSave }: Props) {
         onClick={() => handleSave(section)}
         disabled={disabled}
         className={`px-4 py-2 text-sm font-semibold rounded-md text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer ${
-          justSaved ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-indigo-500 hover:bg-indigo-600'
+          justSaved ? 'bg-[var(--success)] hover:opacity-90' : 'btn-primary'
         }`}
       >
         {justSaved ? '✓ Saved' : 'Save'}
@@ -109,8 +109,8 @@ export function SettingsView({ settings, onSave }: Props) {
 
   const DirtyBadge = ({ dirty }: { dirty: boolean }) =>
     dirty ? (
-      <span className="flex items-center gap-1.5 text-xs text-amber-500 dark:text-amber-400">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 flex-shrink-0 animate-pulse" />
+      <span className="flex items-center gap-1.5 text-xs text-[var(--warning)]">
+        <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)] flex-shrink-0 animate-pulse" />
         Unsaved changes
       </span>
     ) : null;
@@ -118,30 +118,30 @@ export function SettingsView({ settings, onSave }: Props) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-6 pt-5 pb-2">
-        <h2 className="text-lg font-bold">Settings</h2>
+        <h2 className="text-main text-lg font-bold">Settings</h2>
       </div>
 
       {/* Connection */}
-      <div className="mx-6 mt-4 max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h3 className="text-sm font-semibold mb-5 text-zinc-700 dark:text-zinc-300">OpenProject Connection</h3>
+      <div className="surface mx-6 mt-4 max-w-lg border rounded-xl p-6">
+        <h3 className="text-main text-sm font-semibold mb-5">OpenProject Connection</h3>
 
         <div className="mb-4">
           <label className={labelCls}>Server URL</label>
           <input className={inputCls} type="url" placeholder="https://your-openproject.com" value={url} onChange={(e) => setUrl(e.target.value)} />
-          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-600">Base URL of your OpenProject instance</p>
+          <p className="text-subtle mt-1 text-xs">Base URL of your OpenProject instance</p>
         </div>
 
         <div className="mb-5">
           <label className={labelCls}>API Key</label>
           <input className={inputCls} type="password" placeholder="Your personal API key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-600">My Account → Access Tokens → API access key</p>
+          <p className="text-subtle mt-1 text-xs">My Account → Access Tokens → API access key</p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={handleTest}
             disabled={!url || !apiKey || connStatus === 'testing'}
-            className="px-4 py-2 text-sm font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="btn-ghost px-4 py-2 text-sm font-medium rounded-md border disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             {connStatus === 'testing' ? 'Testing…' : 'Test Connection'}
           </button>
@@ -150,22 +150,22 @@ export function SettingsView({ settings, onSave }: Props) {
         </div>
 
         {connStatus === 'ok' && user && (
-          <div className="mt-4 flex items-center gap-2 text-sm text-emerald-500">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+          <div className="mt-4 flex items-center gap-2 text-sm text-[var(--success)]">
+            <span className="w-2 h-2 rounded-full bg-[var(--success)] flex-shrink-0" />
             Connected as <strong>{user.name}</strong> ({user.login})
           </div>
         )}
         {connStatus === 'error' && (
-          <div className="mt-4 flex items-start gap-2 text-xs text-red-400 bg-red-500/10 rounded-md p-3 border border-red-500/20 break-all">
-            <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-0.5" />
+          <div className="danger-chip danger-border mt-4 flex items-start gap-2 text-xs rounded-md p-3 border break-all">
+            <span className="w-2 h-2 rounded-full bg-[var(--danger)] flex-shrink-0 mt-0.5" />
             {error}
           </div>
         )}
       </div>
 
       {/* Idle detection */}
-      <div className="mx-6 mt-4 max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h3 className="text-sm font-semibold mb-5 text-zinc-700 dark:text-zinc-300">Idle Detection</h3>
+      <div className="surface mx-6 mt-4 max-w-lg border rounded-xl p-6">
+        <h3 className="text-main text-sm font-semibold mb-5">Idle Detection</h3>
 
         <label className="flex items-center gap-3 cursor-pointer mb-4">
           <div className="relative">
@@ -175,10 +175,10 @@ export function SettingsView({ settings, onSave }: Props) {
               checked={idleEnabled}
               onChange={(e) => setIdleEnabled(e.target.checked)}
             />
-            <div className={`w-10 h-6 rounded-full transition-colors ${idleEnabled ? 'bg-indigo-500' : 'bg-zinc-300 dark:bg-zinc-700'}`} />
+            <div className={`w-10 h-6 rounded-full transition-colors ${idleEnabled ? 'bg-[var(--brand)]' : 'bg-[var(--app-border-strong)]'}`} />
             <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${idleEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
           </div>
-          <span className="text-sm font-medium">Enable idle detection</span>
+          <span className="text-main text-sm font-medium">Enable idle detection</span>
         </label>
 
         {idleEnabled && (
@@ -191,11 +191,11 @@ export function SettingsView({ settings, onSave }: Props) {
                 max={60}
                 value={idleThresholdMin}
                 onChange={(e) => setIdleThresholdMin(Math.max(1, Math.min(60, Number(e.target.value))))}
-                className="w-20 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm outline-none focus:border-indigo-500 transition-colors"
+                className="input-field w-20 border rounded-md px-3 py-2 text-sm outline-none transition-colors"
               />
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">minutes</span>
+              <span className="text-muted text-sm">minutes</span>
             </div>
-            <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-600">
+            <p className="text-subtle mt-1.5 text-xs">
               After this period without mouse/keyboard activity, Punchly will ask whether to include the idle time when you return.
             </p>
           </div>
@@ -208,18 +208,18 @@ export function SettingsView({ settings, onSave }: Props) {
       </div>
 
       {/* Accessibility — macOS only */}
-      {isMacOS && <div className="mx-6 mt-4 max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h3 className="text-sm font-semibold mb-1 text-zinc-700 dark:text-zinc-300">Accessibility (Idle Detection)</h3>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-5">
+      {isMacOS && <div className="surface mx-6 mt-4 max-w-lg border rounded-xl p-6">
+        <h3 className="text-main text-sm font-semibold mb-1">Accessibility (Idle Detection)</h3>
+        <p className="text-subtle text-xs mb-5">
           Allows Punchly to track keyboard and mouse events to precisely measure idle time — the same approach used by HubStaff. Without this, detection relies on polling which may miss idle periods after screen lock.
         </p>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {accessibilityGranted === null && <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 flex-shrink-0" />}
-            {accessibilityGranted === true && <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />}
-            {accessibilityGranted === false && <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />}
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            {accessibilityGranted === null && <span className="w-2 h-2 rounded-full bg-[var(--app-border-strong)] flex-shrink-0" />}
+            {accessibilityGranted === true && <span className="w-2 h-2 rounded-full bg-[var(--success)] flex-shrink-0" />}
+            {accessibilityGranted === false && <span className="w-2 h-2 rounded-full bg-[var(--warning)] flex-shrink-0" />}
+            <span className="text-muted text-sm">
               {accessibilityGranted === null && 'Checking…'}
               {accessibilityGranted === true && 'Accessibility granted — event-based idle tracking active'}
               {accessibilityGranted === false && 'Accessibility not granted — using polling fallback'}
@@ -228,7 +228,7 @@ export function SettingsView({ settings, onSave }: Props) {
           {accessibilityGranted === false && (
             <button
               onClick={handleRequestAccessibility}
-              className="ml-4 shrink-0 px-3 py-1.5 text-xs font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white transition-colors cursor-pointer"
+              className="btn-primary ml-4 shrink-0 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer"
             >
               Grant Access
             </button>
@@ -236,33 +236,33 @@ export function SettingsView({ settings, onSave }: Props) {
         </div>
 
         {accessibilityGranted === false && (
-          <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
+          <p className="text-subtle mt-3 text-xs">
             If the dialog doesn't appear, go to{' '}
-            <span className="font-medium text-zinc-600 dark:text-zinc-300">System Settings → Privacy & Security → Accessibility</span>{' '}
+            <span className="text-muted font-medium">System Settings → Privacy & Security → Accessibility</span>{' '}
             and enable Punchly manually.
           </p>
         )}
       </div>}
 
       {/* Notifications */}
-      <div className="mx-6 mt-4 mb-6 max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h3 className="text-sm font-semibold mb-1 text-zinc-700 dark:text-zinc-300">Notifications</h3>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-5">
+      <div className="surface mx-6 mt-4 mb-6 max-w-lg border rounded-xl p-6">
+        <h3 className="text-main text-sm font-semibold mb-1">Notifications</h3>
+        <p className="text-subtle text-xs mb-5">
           Punchly shows a system notification when idle time is detected — this works even when the app is in another Space or behind other windows.
         </p>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {notifGranted === null && (
-              <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 flex-shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-[var(--app-border-strong)] flex-shrink-0" />
             )}
             {notifGranted === true && (
-              <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-[var(--success)] flex-shrink-0" />
             )}
             {notifGranted === false && (
-              <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-[var(--danger)] flex-shrink-0" />
             )}
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            <span className="text-muted text-sm">
               {notifGranted === null && 'Checking…'}
               {notifGranted === true && 'Notifications allowed'}
               {notifGranted === false && 'Notifications not allowed'}
@@ -272,7 +272,7 @@ export function SettingsView({ settings, onSave }: Props) {
           {notifGranted === false && (
             <button
               onClick={handleRequestNotifPermission}
-              className="px-3 py-1.5 text-xs font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white transition-colors cursor-pointer"
+              className="btn-primary px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer"
             >
               Allow Notifications
             </button>
@@ -280,7 +280,7 @@ export function SettingsView({ settings, onSave }: Props) {
           {notifGranted === true && (
             <button
               onClick={() => sendNotification({ title: 'Punchly', body: 'Test notification is working!' })}
-              className="px-3 py-1.5 text-xs font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="btn-ghost px-3 py-1.5 text-xs font-medium rounded-md border transition-colors cursor-pointer"
             >
               Send Test
             </button>
@@ -288,9 +288,9 @@ export function SettingsView({ settings, onSave }: Props) {
         </div>
 
         {notifGranted === false && (
-          <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
+          <p className="text-subtle mt-3 text-xs">
             If the dialog doesn't appear, go to{' '}
-            <span className="font-medium text-zinc-600 dark:text-zinc-300">System Settings → Notifications → Punchly</span>{' '}
+            <span className="text-muted font-medium">System Settings → Notifications → Punchly</span>{' '}
             and enable notifications manually.
           </p>
         )}

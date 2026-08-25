@@ -83,18 +83,18 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
   const assigneeTitle = wp._links.assignee?.title ?? '';
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 w-[400px] min-w-[360px]">
+    <div className="surface flex flex-col h-full border-l w-[400px] min-w-[360px]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-200 dark:border-zinc-800 gap-3">
+      <div className="divider flex items-center justify-between px-4 py-3.5 border-b gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded flex-shrink-0">
+          <span className="brand-chip text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded flex-shrink-0">
             {typeTitle}
           </span>
-          <span className="text-xs text-zinc-400 tabular flex-shrink-0">#{wp.id}</span>
+          <span className="text-subtle text-xs tabular flex-shrink-0">#{wp.id}</span>
           <button
             onClick={() => openUrl(`${settings.url}/work_packages/${wp.id}`)}
             title="Open in OpenProject"
-            className="text-zinc-400 hover:text-indigo-500 transition-colors cursor-pointer flex-shrink-0"
+            className="text-subtle hover:text-[var(--brand)] transition-colors cursor-pointer flex-shrink-0"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -105,15 +105,15 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {isTracking ? (
-            <button onClick={onStopTimer} className="px-3 py-1.5 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors cursor-pointer">
+            <button onClick={onStopTimer} className="btn-danger px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer">
               ■ Stop
             </button>
           ) : (
-            <button onClick={() => onStartTimer(wp)} className="px-3 py-1.5 text-xs font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white transition-colors cursor-pointer">
+            <button onClick={() => onStartTimer(wp)} className="btn-primary px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer">
               ▶ Track
             </button>
           )}
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 w-7 h-7 flex items-center justify-center rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
+          <button onClick={onClose} className="text-subtle nav-idle w-7 h-7 flex items-center justify-center rounded transition-colors cursor-pointer">
             ✕
           </button>
         </div>
@@ -121,7 +121,7 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5">
-        <h3 className="text-base font-semibold leading-snug">{wp.subject}</h3>
+        <h3 className="text-main text-base font-semibold leading-snug">{wp.subject}</h3>
 
         {/* Meta */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
@@ -132,15 +132,15 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
 
           {/* Status select */}
           <div className="col-span-2">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-600 mb-1.5">Status</div>
+            <div className="text-subtle text-[10px] font-semibold uppercase tracking-wide mb-1.5">Status</div>
             {loadingStatuses ? (
-              <span className="text-sm text-zinc-400">Loading…</span>
+              <span className="text-subtle text-sm">Loading…</span>
             ) : (
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
                   {currentStatus && <StatusDot color={currentStatus.color} isClosed={currentStatus.isClosed} />}
                   <select
-                    className="flex-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-2.5 py-1.5 text-sm text-zinc-800 dark:text-zinc-200 outline-none focus:border-indigo-500 transition-colors cursor-pointer disabled:opacity-50"
+                    className="input-field flex-1 border rounded-md px-2.5 py-1.5 text-sm outline-none transition-colors cursor-pointer disabled:opacity-50"
                     value={currentStatusId}
                     onChange={(e) => handleStatusChange(e.target.value)}
                     disabled={updatingStatus}
@@ -149,10 +149,10 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
-                  {updatingStatus && <span className="text-xs text-zinc-400 flex-shrink-0">Saving…</span>}
+                  {updatingStatus && <span className="text-subtle text-xs flex-shrink-0">Saving…</span>}
                 </div>
                 {statusError && (
-                  <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded p-2 break-all">{statusError}</p>
+                  <p className="danger-chip danger-border text-xs border rounded p-2 break-all">{statusError}</p>
                 )}
               </div>
             )}
@@ -163,7 +163,7 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
         {wp.description?.raw && (
           <section>
             <SectionTitle>Description</SectionTitle>
-            <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap leading-relaxed">{wp.description.raw}</div>
+            <div className="text-muted mt-2 text-sm whitespace-pre-wrap leading-relaxed">{wp.description.raw}</div>
           </section>
         )}
 
@@ -171,16 +171,16 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
         <section>
           <SectionTitle>
             Time Tracked
-            {totalHours > 0 && <span className="ml-2 text-emerald-500 font-semibold">{totalDisplay}</span>}
+            {totalHours > 0 && <span className="ml-2 text-[var(--success)] font-semibold">{totalDisplay}</span>}
           </SectionTitle>
 
           <div className="mt-2">
-            {loadingEntries && <p className="text-sm text-zinc-400">Loading…</p>}
+            {loadingEntries && <p className="text-subtle text-sm">Loading…</p>}
             {!loadingEntries && entriesError && (
-              <p className="text-xs text-red-400 bg-red-500/10 rounded p-2 break-all">{entriesError}</p>
+              <p className="danger-chip text-xs rounded p-2 break-all">{entriesError}</p>
             )}
             {!loadingEntries && !entriesError && entries.length === 0 && (
-              <p className="text-sm text-zinc-400 dark:text-zinc-600">No time logged yet</p>
+              <p className="text-subtle text-sm">No time logged yet</p>
             )}
 
             {!loadingEntries && dates.map((date) => {
@@ -188,19 +188,19 @@ export function TaskDetailPanel({ wp, settings, allStatuses, runningWpId, onStar
               const dayTotal = dayEntries.reduce((s, e) => s + parseISODuration(e.hours).hours, 0);
               return (
                 <div key={date} className="mb-3">
-                  <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{formatDate(date)}</span>
-                    <span className="text-xs font-semibold tabular text-zinc-700 dark:text-zinc-300">{fmtHours(dayTotal)}</span>
+                  <div className="divider flex items-center justify-between py-1.5 border-b">
+                    <span className="text-muted text-xs font-semibold">{formatDate(date)}</span>
+                    <span className="text-main text-xs font-semibold tabular">{fmtHours(dayTotal)}</span>
                   </div>
                   {dayEntries.map((entry) => (
                     <div key={entry.id} className="flex items-start gap-2.5 py-2 pl-2">
-                      <span className="text-xs font-semibold tabular text-zinc-700 dark:text-zinc-300 min-w-[44px] flex-shrink-0 pt-px">
+                      <span className="text-main text-xs font-semibold tabular min-w-[44px] flex-shrink-0 pt-px">
                         {parseISODuration(entry.hours).display}
                       </span>
                       <div className="min-w-0 flex flex-col gap-0.5">
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{entry._links.user?.title ?? 'Unknown'}</span>
+                        <span className="text-muted text-xs">{entry._links.user?.title ?? 'Unknown'}</span>
                         {entry.comment?.raw && (
-                          <span className="text-xs text-zinc-400 dark:text-zinc-600 line-clamp-2">{entry.comment.raw}</span>
+                          <span className="text-subtle text-xs line-clamp-2">{entry.comment.raw}</span>
                         )}
                       </div>
                     </div>
@@ -230,17 +230,17 @@ export function StatusDot({ color, isClosed }: { color?: string; isClosed?: bool
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-600 mb-0.5">{label}</div>
-      <div className="text-sm text-zinc-700 dark:text-zinc-300">{value || '—'}</div>
+      <div className="text-subtle text-[10px] font-semibold uppercase tracking-wide mb-0.5">{label}</div>
+      <div className="text-muted text-sm">{value || '—'}</div>
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-600">
+    <div className="text-subtle flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
       <span className="flex-shrink-0">{children}</span>
-      <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+      <div className="flex-1 h-px bg-[var(--app-border)]" />
     </div>
   );
 }

@@ -99,8 +99,8 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
     }
   };
 
-  const inputCls = 'w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none focus:border-indigo-500 transition-colors';
-  const labelCls = 'block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1.5';
+  const inputCls = 'input-field w-full border rounded-md px-3 py-2 text-sm outline-none transition-colors';
+  const labelCls = 'text-subtle block text-xs font-semibold uppercase tracking-wide mb-1.5';
 
   return (
     <div
@@ -108,12 +108,12 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl w-[560px] max-w-[90vw] max-h-[90vh] flex flex-col shadow-2xl"
+        className="elevated border rounded-xl w-[560px] max-w-[90vw] max-h-[90vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
-          <h3 className="text-sm font-bold">New Task</h3>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-lg px-1 cursor-pointer">✕</button>
+        <div className="divider flex items-center justify-between px-5 py-4 border-b">
+          <h3 className="text-main text-sm font-bold">New Task</h3>
+          <button onClick={onClose} className="text-subtle hover:text-[var(--app-text)] text-lg px-1 cursor-pointer">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto">
@@ -173,7 +173,7 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-indigo-500 hover:text-indigo-600 font-medium cursor-pointer"
+                  className="link-accent text-xs font-medium cursor-pointer"
                 >
                   + Add file
                 </button>
@@ -182,11 +182,11 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
               {files.length > 0 && (
                 <div className="flex flex-col gap-1.5">
                   {files.map((file, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-md px-3 py-2 text-sm">
-                      <span className="text-zinc-400 text-base">{file.type.startsWith('image/') ? '🖼' : '📎'}</span>
-                      <span className="flex-1 truncate text-zinc-800 dark:text-zinc-200">{file.name}</span>
-                      <span className="text-zinc-400 text-xs shrink-0">{formatBytes(file.size)}</span>
-                      <button type="button" onClick={() => removeFile(i)} className="text-zinc-400 hover:text-red-400 cursor-pointer ml-1 text-base leading-none">✕</button>
+                    <div key={i} className="surface-muted flex items-center gap-2 rounded-md px-3 py-2 text-sm">
+                      <span className="text-subtle text-base">{file.type.startsWith('image/') ? '🖼' : '📎'}</span>
+                      <span className="text-main flex-1 truncate">{file.name}</span>
+                      <span className="text-subtle text-xs shrink-0">{formatBytes(file.size)}</span>
+                      <button type="button" onClick={() => removeFile(i)} className="text-subtle hover:text-[var(--danger)] cursor-pointer ml-1 text-base leading-none">✕</button>
                     </div>
                   ))}
                 </div>
@@ -194,15 +194,15 @@ export function CreateTaskModal({ settings, onClose, onCreated }: Props) {
             </div>
 
             {error && (
-              <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md p-3 break-all">{error}</div>
+              <div className="danger-chip danger-border text-xs border rounded-md p-3 break-all">{error}</div>
             )}
           </div>
 
-          <div className="flex justify-end gap-2.5 px-5 py-4 border-t border-zinc-200 dark:border-zinc-800">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
+          <div className="divider flex justify-end gap-2.5 px-5 py-4 border-t">
+            <button type="button" onClick={onClose} className="btn-ghost px-4 py-2 text-sm font-medium rounded-md border transition-colors cursor-pointer">
               Cancel
             </button>
-            <button type="submit" disabled={!subject.trim() || !projectId || !typeId || saving} className="px-4 py-2 text-sm font-semibold rounded-md bg-indigo-500 hover:bg-indigo-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer">
+            <button type="submit" disabled={!subject.trim() || !projectId || !typeId || saving} className="btn-primary px-4 py-2 text-sm font-semibold rounded-md disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer">
               {saving ? (files.length ? 'Uploading…' : 'Creating…') : 'Create Task'}
             </button>
           </div>
