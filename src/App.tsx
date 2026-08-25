@@ -138,20 +138,24 @@ function App() {
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
-      <div className="app-shell flex h-screen overflow-hidden font-sans antialiased">
-        <Sidebar
-          view={view}
-          onNavigate={setView}
-          timerRunning={timer?.isRunning ?? false}
-          timerElapsed={elapsed}
-          timerSubject={timer?.workPackageSubject ?? null}
-          isIdle={isIdle}
-          onStopTimer={handleStopTimer}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-        />
+      <div className="app-shell flex flex-col h-screen overflow-hidden font-sans antialiased">
+        {/* Invisible drag region — spans full width so the window can be dragged by the title bar area */}
+        <div data-tauri-drag-region className="h-7 w-full shrink-0" />
 
-        <main className="app-main flex-1 flex flex-col overflow-hidden">
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar
+            view={view}
+            onNavigate={setView}
+            timerRunning={timer?.isRunning ?? false}
+            timerElapsed={elapsed}
+            timerSubject={timer?.workPackageSubject ?? null}
+            isIdle={isIdle}
+            onStopTimer={handleStopTimer}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+          />
+
+          <main className="app-main flex-1 flex flex-col overflow-hidden">
           {updateAvailable && (
             <div className="brand-soft brand-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
               <span className="flex items-center gap-2">
@@ -207,7 +211,8 @@ function App() {
           {view === 'settings' && (
             <SettingsView settings={settings} onSave={saveSettings} />
           )}
-        </main>
+          </main>
+        </div>
       </div>
 
       {idleQueue.length > 0 && (
