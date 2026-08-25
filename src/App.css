@@ -1,263 +1,284 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* class-based dark mode: add class="dark" to root element */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  color-scheme: light;
-  --app-bg: #f4efe4;
-  --app-bg-alt: #ebe2d4;
-  --app-sidebar: #fbf5e9;
-  --app-surface: #fffaf1;
-  --app-surface-muted: #f3eadc;
-  --app-elevated: #fffdf8;
-  --app-border: #dccfbb;
-  --app-border-strong: #cbbba3;
-  --app-text: #28231c;
-  --app-muted: #756b5c;
-  --app-subtle: #978d7f;
-  --brand: #128f80;
-  --brand-hover: #0d7d70;
-  --brand-soft: #dff5ee;
-  --brand-border: #a7d9ce;
-  --selected: #6e61d9;
-  --selected-soft: #eeebff;
-  --selected-border: #bbb3f2;
-  --success: #168a63;
-  --success-soft: #ddf3e8;
-  --success-border: #a9d9c7;
-  --warning: #c87912;
-  --warning-soft: #fff0cf;
-  --warning-border: #f1ce86;
-  --danger: #d55345;
-  --danger-hover: #bd4438;
-  --danger-soft: #ffe6e0;
-  --danger-border: #f2b3a8;
-  --accent: #ee755f;
+	color-scheme: light;
+	--app-bg: #f4efe4;
+	--app-bg-alt: #ebe2d4;
+	--app-sidebar: #fbf5e9;
+	--app-surface: #fffaf1;
+	--app-surface-muted: #f3eadc;
+	--app-elevated: #fffdf8;
+	--app-border: #dccfbb;
+	--app-border-strong: #cbbba3;
+	--app-text: #28231c;
+	--app-muted: #756b5c;
+	--app-subtle: #978d7f;
+	--brand: #128f80;
+	--brand-hover: #0d7d70;
+	--brand-soft: #dff5ee;
+	--brand-border: #a7d9ce;
+	--selected: #6e61d9;
+	--selected-soft: #eeebff;
+	--selected-border: #bbb3f2;
+	--success: #168a63;
+	--success-soft: #ddf3e8;
+	--success-border: #a9d9c7;
+	--warning: #c87912;
+	--warning-soft: #fff0cf;
+	--warning-border: #f1ce86;
+	--danger: #d55345;
+	--danger-hover: #bd4438;
+	--danger-soft: #ffe6e0;
+	--danger-border: #f2b3a8;
+	--accent: #ee755f;
 }
 
 .dark {
-  color-scheme: dark;
-  --app-bg: #101612;
-  --app-bg-alt: #0b100d;
-  --app-sidebar: #141d18;
-  --app-surface: #18211c;
-  --app-surface-muted: #202b24;
-  --app-elevated: #1c2721;
-  --app-border: #2d3a33;
-  --app-border-strong: #405248;
-  --app-text: #f4efe5;
-  --app-muted: #b4aa9a;
-  --app-subtle: #857d70;
-  --brand: #38d6b1;
-  --brand-hover: #5be2c2;
-  --brand-soft: #12382f;
-  --brand-border: #1f6e5d;
-  --selected: #a79bff;
-  --selected-soft: #211f3d;
-  --selected-border: #524aa1;
-  --success: #43d18f;
-  --success-soft: #123427;
-  --success-border: #226347;
-  --warning: #f0ae45;
-  --warning-soft: #382813;
-  --warning-border: #76511d;
-  --danger: #ff7666;
-  --danger-hover: #ff8a7d;
-  --danger-soft: #3d1c18;
-  --danger-border: #7c332b;
-  --accent: #ff8a72;
+	color-scheme: dark;
+	--app-bg: #101612;
+	--app-bg-alt: #0b100d;
+	--app-sidebar: #141d18;
+	--app-surface: #18211c;
+	--app-surface-muted: #202b24;
+	--app-elevated: #1c2721;
+	--app-border: #2d3a33;
+	--app-border-strong: #405248;
+	--app-text: #f4efe5;
+	--app-muted: #b4aa9a;
+	--app-subtle: #857d70;
+	--brand: #38d6b1;
+	--brand-hover: #5be2c2;
+	--brand-soft: #12382f;
+	--brand-border: #1f6e5d;
+	--selected: #a79bff;
+	--selected-soft: #211f3d;
+	--selected-border: #524aa1;
+	--success: #43d18f;
+	--success-soft: #123427;
+	--success-border: #226347;
+	--warning: #f0ae45;
+	--warning-soft: #382813;
+	--warning-border: #76511d;
+	--danger: #ff7666;
+	--danger-hover: #ff8a7d;
+	--danger-soft: #3d1c18;
+	--danger-border: #7c332b;
+	--accent: #ff8a72;
 }
 
 body {
-  background: var(--app-bg);
+	background: var(--app-bg);
 }
 
 /* Custom scrollbar */
-* { scrollbar-width: thin; scrollbar-color: var(--app-border-strong) transparent; }
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--app-border-strong); border-radius: 10px; }
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--app-border-strong) transparent;
+}
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--app-border-strong);
+	border-radius: 10px;
+}
 
 /* tabular nums for timer */
-.tabular { font-variant-numeric: tabular-nums; }
+.tabular {
+	font-variant-numeric: tabular-nums;
+}
 
 .app-shell {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--brand) 7%, transparent), transparent 34%),
-    var(--app-bg);
-  color: var(--app-text);
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--brand) 7%, transparent), transparent 34%),
+		var(--app-bg);
+	color: var(--app-text);
 }
 
 .app-main {
-  background: color-mix(in srgb, var(--app-bg) 88%, var(--brand) 5%);
+	background: color-mix(in srgb, var(--app-bg) 88%, var(--brand) 5%);
 }
 
 .surface {
-  background: var(--app-surface);
-  border-color: var(--app-border);
+	background: var(--app-surface);
+	border-color: var(--app-border);
 }
 
 .surface-muted {
-  background: var(--app-surface-muted);
-  border-color: var(--app-border);
+	background: var(--app-surface-muted);
+	border-color: var(--app-border);
 }
 
 .elevated {
-  background: var(--app-elevated);
-  border-color: var(--app-border);
+	background: var(--app-elevated);
+	border-color: var(--app-border);
 }
 
 .sidebar-shell {
-  background: linear-gradient(180deg, var(--app-sidebar), color-mix(in srgb, var(--app-sidebar) 82%, var(--brand) 8%));
-  border-color: var(--app-border);
+	background: linear-gradient(
+		180deg,
+		var(--app-sidebar),
+		color-mix(in srgb, var(--app-sidebar) 82%, var(--brand) 8%)
+	);
+	border-color: var(--app-border);
 }
 
 .divider {
-  border-color: var(--app-border);
+	border-color: var(--app-border);
 }
 
 .text-main {
-  color: var(--app-text);
+	color: var(--app-text);
 }
 
 .text-muted {
-  color: var(--app-muted);
+	color: var(--app-muted);
 }
 
 .text-subtle {
-  color: var(--app-subtle);
+	color: var(--app-subtle);
 }
 
 .input-field {
-  background: var(--app-surface-muted);
-  border-color: var(--app-border);
-  color: var(--app-text);
+	background: var(--app-surface-muted);
+	border-color: var(--app-border);
+	color: var(--app-text);
 }
 
 .input-field::placeholder {
-  color: var(--app-subtle);
+	color: var(--app-subtle);
 }
 
 .input-field:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent);
+	border-color: var(--brand);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent);
 }
 
 .btn-primary {
-  background: var(--brand);
-  color: white;
+	background: var(--brand);
+	color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--brand-hover);
+	background: var(--brand-hover);
 }
 
 .btn-danger {
-  background: var(--danger);
-  color: white;
+	background: var(--danger);
+	color: white;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: var(--danger-hover);
+	background: var(--danger-hover);
 }
 
 .btn-ghost {
-  border-color: var(--app-border-strong);
-  color: var(--app-muted);
+	border-color: var(--app-border-strong);
+	color: var(--app-muted);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--app-surface-muted);
-  color: var(--app-text);
+	background: var(--app-surface-muted);
+	color: var(--app-text);
 }
 
 .link-accent {
-  color: var(--brand);
+	color: var(--brand);
 }
 
 .link-accent:hover {
-  color: var(--brand-hover);
+	color: var(--brand-hover);
 }
 
 .nav-active {
-  background: var(--brand-soft);
-  color: var(--brand);
+	background: var(--brand-soft);
+	color: var(--brand);
 }
 
 .nav-idle:hover {
-  background: var(--app-surface-muted);
-  color: var(--app-text);
+	background: var(--app-surface-muted);
+	color: var(--app-text);
 }
 
 .brand-chip {
-  background: var(--brand-soft);
-  color: var(--brand);
+	background: var(--brand-soft);
+	color: var(--brand);
 }
 
 .brand-border {
-  border-color: var(--brand-border);
+	border-color: var(--brand-border);
 }
 
 .brand-soft {
-  background: color-mix(in srgb, var(--brand-soft) 72%, transparent);
+	background: color-mix(in srgb, var(--brand-soft) 72%, transparent);
 }
 
 .task-card {
-  position: relative;
-  overflow: hidden;
+	position: relative;
+	overflow: hidden;
 }
 
 .task-card-selected {
-  background: color-mix(in srgb, var(--selected-soft) 88%, var(--app-surface) 12%);
-  border-color: var(--selected-border);
-  box-shadow: inset 3px 0 0 var(--selected);
+	background: color-mix(in srgb, var(--selected-soft) 88%, var(--app-surface) 12%);
+	border-color: var(--selected-border);
+	box-shadow: inset 3px 0 0 var(--selected);
 }
 
 .task-card-selected:hover {
-  border-color: var(--selected);
+	border-color: var(--selected);
 }
 
 .task-card-tracking {
-  background: color-mix(in srgb, var(--success-soft) 86%, var(--app-surface) 14%);
-  border-color: var(--success-border);
+	background: color-mix(in srgb, var(--success-soft) 86%, var(--app-surface) 14%);
+	border-color: var(--success-border);
 }
 
 .task-card-tracking-selected {
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--selected-soft) 92%, transparent) 0 10px, transparent 10px),
-    color-mix(in srgb, var(--success-soft) 86%, var(--app-surface) 14%);
-  border-color: var(--success-border);
-  box-shadow: inset 3px 0 0 var(--selected);
+	background:
+		linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--selected-soft) 92%, transparent) 0 10px,
+			transparent 10px
+		),
+		color-mix(in srgb, var(--success-soft) 86%, var(--app-surface) 14%);
+	border-color: var(--success-border);
+	box-shadow: inset 3px 0 0 var(--selected);
 }
 
 .success-chip {
-  background: var(--success-soft);
-  color: var(--success);
+	background: var(--success-soft);
+	color: var(--success);
 }
 
 .success-border {
-  border-color: var(--success-border);
+	border-color: var(--success-border);
 }
 
 .warning-chip {
-  background: var(--warning-soft);
-  color: var(--warning);
+	background: var(--warning-soft);
+	color: var(--warning);
 }
 
 .warning-border {
-  border-color: var(--warning-border);
+	border-color: var(--warning-border);
 }
 
 .danger-chip {
-  background: var(--danger-soft);
-  color: var(--danger);
+	background: var(--danger-soft);
+	color: var(--danger);
 }
 
 .danger-border {
-  border-color: var(--danger-border);
+	border-color: var(--danger-border);
 }
 
 .accent-text {
-  color: var(--accent);
+	color: var(--accent);
 }

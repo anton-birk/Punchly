@@ -20,11 +20,11 @@ A macOS time tracker for [OpenProject](https://www.openproject.org/). Sits in yo
 
 Download the latest release for your platform from [Releases](../../releases):
 
-| Platform | File |
-|---|---|
-| macOS (Intel + Apple Silicon) | `.dmg` |
-| Windows | `.exe` (NSIS installer) or `.msi` |
-| Linux | `.AppImage` (universal) or `.deb` |
+| Platform                      | File                              |
+| ----------------------------- | --------------------------------- |
+| macOS (Intel + Apple Silicon) | `.dmg`                            |
+| Windows                       | `.exe` (NSIS installer) or `.msi` |
+| Linux                         | `.AppImage` (universal) or `.deb` |
 
 > **macOS — first launch on a new Mac:** if Gatekeeper blocks the app, go to **System Settings → Privacy & Security → Open Anyway**.
 >
@@ -49,18 +49,21 @@ bun run tauri dev
 ```
 
 **Production build:**
+
 ```sh
 bun run tauri build
 # Output: src-tauri/target/release/bundle/dmg/
 ```
 
 **macOS universal binary (Intel + Apple Silicon):**
+
 ```sh
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 bun run tauri build --target universal-apple-darwin
 ```
 
 **Windows / Linux** (run natively on the target OS):
+
 ```sh
 bun run tauri build
 ```
@@ -77,14 +80,14 @@ bun run tauri build
 
 Without signing, macOS Gatekeeper will warn users on first launch. To distribute properly, add these secrets to your GitHub repository (**Settings → Secrets → Actions**):
 
-| Secret | How to get it |
-|---|---|
-| `APPLE_CERTIFICATE` | Export your **Developer ID Application** cert from Keychain as `.p12`, then `base64 -i cert.p12` |
-| `APPLE_CERTIFICATE_PASSWORD` | The password you set when exporting the `.p12` |
-| `APPLE_SIGNING_IDENTITY` | Run `security find-identity -v -p codesigning` — copy the full string like `Developer ID Application: Name (TEAMID)` |
-| `APPLE_ID` | Your Apple Developer account email |
-| `APPLE_PASSWORD` | App-specific password — create at [appleid.apple.com](https://appleid.apple.com) |
-| `APPLE_TEAM_ID` | 10-character team ID from [developer.apple.com/account](https://developer.apple.com/account) |
+| Secret                       | How to get it                                                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `APPLE_CERTIFICATE`          | Export your **Developer ID Application** cert from Keychain as `.p12`, then `base64 -i cert.p12`                     |
+| `APPLE_CERTIFICATE_PASSWORD` | The password you set when exporting the `.p12`                                                                       |
+| `APPLE_SIGNING_IDENTITY`     | Run `security find-identity -v -p codesigning` — copy the full string like `Developer ID Application: Name (TEAMID)` |
+| `APPLE_ID`                   | Your Apple Developer account email                                                                                   |
+| `APPLE_PASSWORD`             | App-specific password — create at [appleid.apple.com](https://appleid.apple.com)                                     |
+| `APPLE_TEAM_ID`              | 10-character team ID from [developer.apple.com/account](https://developer.apple.com/account)                         |
 
 macOS signing requires a paid **Apple Developer Program** membership ($99/year).
 
