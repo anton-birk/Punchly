@@ -21,7 +21,8 @@ const nav: { id: View; label: string; icon: string }[] = [
 
 export function Sidebar({ view, onNavigate, timerRunning, timerElapsed, timerSubject, isIdle, onStopTimer, theme, onToggleTheme }: Props) {
   return (
-    <aside className="sidebar-shell w-[230px] min-w-[230px] border-r flex flex-col pt-3">
+    <aside className="sidebar-shell w-[230px] min-w-[230px] border-r flex flex-col">
+      <div data-tauri-drag-region className="bg-transparent h-7 cursor-grab active:cursor-grabbing"/>
       <div className="divider flex items-center gap-2.5 px-4 py-5 border-b">
         <span className="text-xl">⏱</span>
         <span className="text-main text-[17px] font-bold tracking-tight">Punchly</span>

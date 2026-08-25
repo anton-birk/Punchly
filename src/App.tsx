@@ -1,19 +1,19 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import './App.css';
-import { useSettings } from './hooks/useSettings';
-import { useTimer } from './hooks/useTimer';
-import { useIdleDetection, type IdleEvent } from './hooks/useIdleDetection';
-import { useNetworkStatus } from './hooks/useNetworkStatus';
-import { Sidebar } from './components/Sidebar';
-import { TasksView } from './components/TasksView';
-import { SettingsView } from './components/SettingsView';
-import { IdleDialog } from './components/IdleDialog';
-import { testConnection, logTime, idFromHref } from './api/openproject';
-import { invoke } from '@tauri-apps/api/core';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
-import { useUpdateCheck } from './hooks/useUpdateCheck';
-import type { View, WorkPackage, User } from './types/openproject';
+import {useSettings} from './hooks/useSettings';
+import {useTimer} from './hooks/useTimer';
+import {type IdleEvent, useIdleDetection} from './hooks/useIdleDetection';
+import {useNetworkStatus} from './hooks/useNetworkStatus';
+import {Sidebar} from './components/Sidebar';
+import {TasksView} from './components/TasksView';
+import {SettingsView} from './components/SettingsView';
+import {IdleDialog} from './components/IdleDialog';
+import {idFromHref, logTime, testConnection} from './api/openproject';
+import {invoke} from '@tauri-apps/api/core';
+import {openUrl} from '@tauri-apps/plugin-opener';
+import {isPermissionGranted, requestPermission} from '@tauri-apps/plugin-notification';
+import {useUpdateCheck} from './hooks/useUpdateCheck';
+import type {User, View, WorkPackage} from './types/openproject';
 
 type Theme = 'dark' | 'light';
 
@@ -22,11 +22,11 @@ function loadTheme(): Theme {
 }
 
 function App() {
-  const { settings, save: saveSettings, isConfigured } = useSettings();
-  const { timer, elapsed, start, stop, pauseTimer, resumeTimer } = useTimer();
+  const {settings, save: saveSettings, isConfigured} = useSettings();
+  const {timer, elapsed, start, stop, pauseTimer, resumeTimer} = useTimer();
   const pausedAtRef = useRef<number | null>(null);
   const pendingDeductRef = useRef<number>(0);
-  const { updateAvailable, latestVersion, releaseUrl, dismiss: dismissUpdate } = useUpdateCheck();
+  const {updateAvailable, latestVersion, releaseUrl, dismiss: dismissUpdate} = useUpdateCheck();
   const [view, setView] = useState<View>(isConfigured ? 'my-tasks' : 'settings');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [logError, setLogError] = useState('');
@@ -93,7 +93,8 @@ function App() {
         pausedAtRef.current = Date.now();
         pendingDeductRef.current = 0;
         pauseTimer();
-        invoke('clear_rust_timer').catch(() => {});
+        invoke('clear_rust_timer').catch(() => {
+        });
       }
       return [...prev, e];
     });
@@ -116,7 +117,7 @@ function App() {
   const handleIdleKeep = () => dismissFirst(0);
   const handleIdleDeduct = () => dismissFirst(idleQueue[0]?.idleSeconds ?? 0);
 
-  const { isIdle } = useIdleDetection(
+  const {isIdle} = useIdleDetection(
     settings.idleEnabled,
     settings.idleThresholdMin,
     timer?.isRunning ?? false,
@@ -130,18 +131,17 @@ function App() {
       invoke('set_rust_timer', {
         startMs: timer.startTime,
         idleDeductedSec: timer.idleDeductedSec ?? 0,
-      }).catch(() => {});
+      }).catch(() => {
+      });
     } else {
-      invoke('clear_rust_timer').catch(() => {});
+      invoke('clear_rust_timer').catch(() => {
+      });
     }
   }, [timer?.isRunning, timer?.startTime, timer?.idleDeductedSec]);
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
       <div className="app-shell flex flex-col h-screen overflow-hidden font-sans antialiased">
-        {/* Invisible drag region — spans full width so the window can be dragged by the title bar area */}
-        <div data-tauri-drag-region className="h-7 w-full shrink-0" />
-
         <div className="flex flex-1 overflow-hidden">
           <Sidebar
             view={view}
@@ -155,11 +155,14 @@ function App() {
             onToggleTheme={toggleTheme}
           />
 
+
           <main className="app-main flex-1 flex flex-col overflow-hidden">
-          {updateAvailable && (
-            <div className="brand-soft brand-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
+            <div data-tauri-drag-region className="h-7 cursor-grab active:cursor-grabbing"/>
+            {updateAvailable && (
+              <div
+                className="brand-soft brand-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
               <span className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand)] flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand)] flex-shrink-0"/>
                 Punchly {latestVersion} is available.
                 <button
                   onClick={() => openUrl(releaseUrl)}
@@ -168,49 +171,50 @@ function App() {
                   Download
                 </button>
               </span>
-              <button onClick={dismissUpdate} className="link-accent transition-colors cursor-pointer">✕</button>
-            </div>
-          )}
-          {!isOnline && (
-            <div className="warning-chip warning-border flex items-center gap-2 border-b text-xs px-5 py-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)] flex-shrink-0" />
-              No internet connection — timer is still running, changes will sync when back online.
-            </div>
-          )}
-          {logError && (
-            <div className="danger-chip danger-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
-              <span>{logError}</span>
-              <button onClick={() => setLogError('')} className="hover:opacity-80">✕</button>
-            </div>
-          )}
+                <button onClick={dismissUpdate} className="link-accent transition-colors cursor-pointer">✕</button>
+              </div>
+            )}
+            {!isOnline && (
+              <div className="warning-chip warning-border flex items-center gap-2 border-b text-xs px-5 py-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)] flex-shrink-0"/>
+                No internet connection — timer is still running, changes will sync when back online.
+              </div>
+            )}
+            {logError && (
+              <div
+                className="danger-chip danger-border flex items-center justify-between gap-3 border-b text-xs px-5 py-2">
+                <span>{logError}</span>
+                <button onClick={() => setLogError('')} className="hover:opacity-80">✕</button>
+              </div>
+            )}
 
-          {view === 'my-tasks' && (
-            <TasksView
-              key={`my-${tasksRefreshKey}`}
-              settings={settings}
-              onlyMine={true}
-              currentUserId={currentUser?.id ?? null}
-              runningWpId={timer?.workPackageId ?? null}
-              onStartTimer={handleStartTimer}
-              onStopTimer={handleStopTimer}
-            />
-          )}
+            {view === 'my-tasks' && (
+              <TasksView
+                key={`my-${tasksRefreshKey}`}
+                settings={settings}
+                onlyMine={true}
+                currentUserId={currentUser?.id ?? null}
+                runningWpId={timer?.workPackageId ?? null}
+                onStartTimer={handleStartTimer}
+                onStopTimer={handleStopTimer}
+              />
+            )}
 
-          {view === 'all-tasks' && (
-            <TasksView
-              key={`all-${tasksRefreshKey}`}
-              settings={settings}
-              onlyMine={false}
-              currentUserId={currentUser?.id ?? null}
-              runningWpId={timer?.workPackageId ?? null}
-              onStartTimer={handleStartTimer}
-              onStopTimer={handleStopTimer}
-            />
-          )}
+            {view === 'all-tasks' && (
+              <TasksView
+                key={`all-${tasksRefreshKey}`}
+                settings={settings}
+                onlyMine={false}
+                currentUserId={currentUser?.id ?? null}
+                runningWpId={timer?.workPackageId ?? null}
+                onStartTimer={handleStartTimer}
+                onStopTimer={handleStopTimer}
+              />
+            )}
 
-          {view === 'settings' && (
-            <SettingsView settings={settings} onSave={saveSettings} />
-          )}
+            {view === 'settings' && (
+              <SettingsView settings={settings} onSave={saveSettings}/>
+            )}
           </main>
         </div>
       </div>

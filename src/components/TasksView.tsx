@@ -107,7 +107,7 @@ export function TasksView({ settings, onlyMine, currentUserId, runningWpId, onSt
       {/* Task list column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-0">
+        <div className="flex items-center justify-between px-6 pb-0">
           <h2 className="text-main text-lg font-bold">{onlyMine ? 'My Tasks' : 'All Tasks'}</h2>
           <button
             onClick={() => setShowModal(true)}
